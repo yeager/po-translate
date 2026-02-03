@@ -127,7 +127,7 @@ Use ISO 639-1 codes:
 
 ## License
 
-MIT
+GPL-3.0
 
 ## Author
 
