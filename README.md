@@ -12,19 +12,37 @@
 
 ## Installation
 
-### Debian/Ubuntu (.deb)
+### Debian/Ubuntu
 
 ```bash
 wget https://github.com/yeager/po-translate/releases/download/v1.0.0/po-translate_1.0.0_all.deb
 sudo dpkg -i po-translate_1.0.0_all.deb
 ```
 
-### Fedora/RHEL (.rpm)
+### Fedora/RHEL/openSUSE
 
 ```bash
 wget https://github.com/yeager/po-translate/releases/download/v1.0.0/po-translate-1.0.0-1.noarch.rpm
 sudo rpm -i po-translate-1.0.0-1.noarch.rpm
 ```
+
+### Arch Linux
+
+```bash
+wget https://github.com/yeager/po-translate/releases/download/v1.0.0/po-translate-1.0.0.pkg.tar.zst
+sudo pacman -U po-translate-1.0.0.pkg.tar.zst
+```
+
+### Universal (tar.gz)
+
+```bash
+wget https://github.com/yeager/po-translate/releases/download/v1.0.0/po-translate-1.0.0.tar.gz
+tar xzf po-translate-1.0.0.tar.gz -C /usr/local
+```
+
+### Windows/macOS (zip)
+
+Download [po-translate-1.0.0.zip](https://github.com/yeager/po-translate/releases/download/v1.0.0/po-translate-1.0.0.zip), extract, and add to PATH.
 
 ### From source
 
