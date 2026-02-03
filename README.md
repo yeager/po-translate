@@ -4,8 +4,8 @@
 
 ## Features
 
-- **Multiple services** – Free (Lingva, MyMemory) and paid (OpenAI, Anthropic)
-- **Batch translation** – Efficient API usage with batched requests
+- **8 translation services** – Free and paid options
+- **Batch translation** – Efficient API usage
 - **Format support** – gettext `.po` and Qt `.ts` files
 - **Preserves placeholders** – Keeps `{0}`, `%s`, `%d` intact
 - **Dry run mode** – Preview changes before saving
@@ -23,24 +23,36 @@ ln -s $(pwd)/po_translate.py /usr/local/bin/po-translate
 
 ## Usage
 
-### Basic usage (free service)
+### Basic usage (free services)
 
 ```bash
-# Translate with MyMemory (free, no API key)
+# Translate with MyMemory (free, recommended)
 po-translate --source en --target sv ./translations/
 
 # Translate single file
 po-translate --source en --target de messages.po
+
+# Use LibreTranslate (self-hosted)
+po-translate --service libretranslate --url http://localhost:5000 --source en --target fr ./po/
 ```
 
-### With AI services (better quality)
+### With paid services (better quality)
 
 ```bash
-# OpenAI (best quality)
+# DeepL (best for European languages)
+po-translate --service deepl --api-key xxx --source en --target de ./po/
+
+# DeepL Free API
+po-translate --service deepl-free --api-key xxx --source en --target sv ./po/
+
+# Google Cloud Translation
+po-translate --service google --api-key xxx --source en --target ja ./po/
+
+# OpenAI (context-aware, best quality)
 po-translate --service openai --api-key sk-xxx --source en --target ja ./po/
 
 # Anthropic Claude
-po-translate --service anthropic --api-key sk-ant-xxx --source en --target fr ./po/
+po-translate --service anthropic --api-key sk-ant-xxx --source en --target ko ./po/
 ```
 
 ### Options
@@ -51,6 +63,7 @@ po-translate --service anthropic --api-key sk-ant-xxx --source en --target fr ./
 | `--target`, `-t` | Target language code (required) |
 | `--service` | Translation service (default: lingva) |
 | `--api-key` | API key for paid services |
+| `--url` | Custom URL for LibreTranslate |
 | `--model` | Model for AI services |
 | `--batch-size` | Entries per API call (default: 10) |
 | `--dry-run` | Preview without saving |
@@ -58,26 +71,30 @@ po-translate --service anthropic --api-key sk-ant-xxx --source en --target fr ./
 
 ## Services
 
-### Free (no API key)
+### Free (no API key required)
 
-| Service | Pros | Cons |
-|---------|------|------|
-| `lingva` | Google Translate quality | Rate limited |
-| `mymemory` | Good quality, 1000 words/day | Daily limit |
+| Service | Description | Limits |
+|---------|-------------|--------|
+| `lingva` | Google Translate frontend | Rate limited |
+| `mymemory` | Translation memory | 1000 words/day |
+| `libretranslate` | Self-hosted or public | Depends on instance |
 
 ### Paid (API key required)
 
-| Service | Pros | Cons |
-|---------|------|------|
-| `openai` | Best quality, context-aware | Cost per token |
-| `anthropic` | Excellent quality | Cost per token |
+| Service | Description | Pricing |
+|---------|-------------|---------|
+| `deepl` | DeepL Pro API | €5.49/month + usage |
+| `deepl-free` | DeepL Free API | 500k chars/month |
+| `google` | Google Cloud Translation | $20/million chars |
+| `openai` | GPT models (context-aware) | ~$0.15/million tokens |
+| `anthropic` | Claude models | ~$0.25/million tokens |
 
 ## Examples
 
-### Translate all Swedish files
+### Translate all untranslated strings
 
 ```bash
-po-translate --source en --target sv ./resources/language/resource.language.sv_se/
+po-translate --source en --target sv ./resources/language/
 ```
 
 ### Preview changes first
@@ -86,7 +103,14 @@ po-translate --source en --target sv ./resources/language/resource.language.sv_s
 po-translate --dry-run --source en --target de ./translations/
 ```
 
-### Use GPT-4 for best quality
+### Use DeepL for high-quality European translations
+
+```bash
+po-translate --service deepl --api-key $DEEPL_API_KEY \
+  --source en --target de ./po/
+```
+
+### Use GPT-4 for best quality (context-aware)
 
 ```bash
 po-translate --service openai --api-key $OPENAI_API_KEY \
@@ -97,24 +121,23 @@ po-translate --service openai --api-key $OPENAI_API_KEY \
 
 Use ISO 639-1 codes:
 
-| Code | Language |
-|------|----------|
-| en | English |
-| sv | Swedish |
-| de | German |
-| fr | French |
-| es | Spanish |
-| ja | Japanese |
-| zh | Chinese |
-| ko | Korean |
-| ... | ... |
+| Code | Language | Code | Language |
+|------|----------|------|----------|
+| en | English | ja | Japanese |
+| sv | Swedish | zh | Chinese |
+| de | German | ko | Korean |
+| fr | French | ar | Arabic |
+| es | Spanish | ru | Russian |
+| it | Italian | pt | Portuguese |
+| nl | Dutch | pl | Polish |
 
 ## Tips
 
 1. **Start with dry-run** to preview translations
-2. **Use AI services** for UI strings (context-aware)
-3. **Increase batch-size** for AI services (more efficient)
-4. **Review translations** – machine translation isn't perfect
+2. **Use DeepL** for European languages (best quality)
+3. **Use AI services** for context-aware translations
+4. **Increase batch-size** for AI services (more efficient)
+5. **Review translations** – machine translation isn't perfect
 
 ## Related tools
 

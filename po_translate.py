@@ -436,6 +436,163 @@ class MyMemoryTranslator(Translator):
             return text
 
 
+class DeepLTranslator(Translator):
+    """Translation via DeepL API (free or pro)."""
+    
+    def __init__(self, api_key: str, free: bool = False):
+        self.api_key = api_key
+        self.base_url = "https://api-free.deepl.com" if free else "https://api.deepl.com"
+    
+    def _map_lang(self, lang: str) -> str:
+        """Map language codes to DeepL format."""
+        # DeepL uses uppercase and some specific codes
+        lang_map = {
+            'en': 'EN', 'de': 'DE', 'fr': 'FR', 'es': 'ES', 'it': 'IT',
+            'nl': 'NL', 'pl': 'PL', 'pt': 'PT-PT', 'pt-br': 'PT-BR',
+            'ru': 'RU', 'ja': 'JA', 'zh': 'ZH', 'ko': 'KO',
+            'sv': 'SV', 'da': 'DA', 'fi': 'FI', 'nb': 'NB', 'no': 'NB',
+            'el': 'EL', 'cs': 'CS', 'ro': 'RO', 'hu': 'HU', 'sk': 'SK',
+            'sl': 'SL', 'bg': 'BG', 'et': 'ET', 'lv': 'LV', 'lt': 'LT',
+            'uk': 'UK', 'id': 'ID', 'tr': 'TR',
+        }
+        return lang_map.get(lang.lower(), lang.upper())
+    
+    def translate_batch(self, texts: list[str], source_lang: str, target_lang: str) -> list[str]:
+        """Translate batch using DeepL API."""
+        if not texts:
+            return []
+        
+        url = f"{self.base_url}/v2/translate"
+        
+        data = urllib.parse.urlencode({
+            'auth_key': self.api_key,
+            'text': texts,  # DeepL supports multiple texts
+            'source_lang': self._map_lang(source_lang),
+            'target_lang': self._map_lang(target_lang),
+        }, doseq=True).encode()
+        
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'User-Agent': 'po-translate/1.0'
+            }
+        )
+        
+        try:
+            response = urllib.request.urlopen(req, timeout=60)
+            result = json.loads(response.read().decode())
+            
+            translations = [t['text'] for t in result.get('translations', [])]
+            
+            # Pad with originals if needed
+            while len(translations) < len(texts):
+                translations.append(texts[len(translations)])
+            
+            return translations[:len(texts)]
+            
+        except Exception as e:
+            print(f"  ⚠️ DeepL error: {e}", file=sys.stderr)
+            return texts
+    
+    def translate(self, text: str, source_lang: str, target_lang: str) -> str:
+        results = self.translate_batch([text], source_lang, target_lang)
+        return results[0] if results else text
+
+
+class LibreTranslateTranslator(Translator):
+    """Translation via LibreTranslate API (self-hosted or public)."""
+    
+    def __init__(self, url: str = "https://libretranslate.com", api_key: str = None):
+        self.base_url = url.rstrip('/')
+        self.api_key = api_key
+    
+    def translate(self, text: str, source_lang: str, target_lang: str) -> str:
+        if not text.strip():
+            return ""
+        
+        url = f"{self.base_url}/translate"
+        
+        payload = {
+            'q': text,
+            'source': source_lang,
+            'target': target_lang,
+            'format': 'text'
+        }
+        if self.api_key:
+            payload['api_key'] = self.api_key
+        
+        data = json.dumps(payload).encode()
+        
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={
+                'Content-Type': 'application/json',
+                'User-Agent': 'po-translate/1.0'
+            }
+        )
+        
+        try:
+            response = urllib.request.urlopen(req, timeout=30)
+            result = json.loads(response.read().decode())
+            return result.get('translatedText', text)
+            
+        except Exception as e:
+            print(f"  ⚠️ LibreTranslate error: {e}", file=sys.stderr)
+            return text
+
+
+class GoogleCloudTranslator(Translator):
+    """Translation via Google Cloud Translation API."""
+    
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+    
+    def translate_batch(self, texts: list[str], source_lang: str, target_lang: str) -> list[str]:
+        """Translate batch using Google Cloud API."""
+        if not texts:
+            return []
+        
+        url = f"https://translation.googleapis.com/language/translate/v2?key={self.api_key}"
+        
+        data = json.dumps({
+            'q': texts,
+            'source': source_lang,
+            'target': target_lang,
+            'format': 'text'
+        }).encode()
+        
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={
+                'Content-Type': 'application/json',
+                'User-Agent': 'po-translate/1.0'
+            }
+        )
+        
+        try:
+            response = urllib.request.urlopen(req, timeout=60)
+            result = json.loads(response.read().decode())
+            
+            translations = [t['translatedText'] for t in result['data']['translations']]
+            
+            while len(translations) < len(texts):
+                translations.append(texts[len(translations)])
+            
+            return translations[:len(texts)]
+            
+        except Exception as e:
+            print(f"  ⚠️ Google Cloud error: {e}", file=sys.stderr)
+            return texts
+    
+    def translate(self, text: str, source_lang: str, target_lang: str) -> str:
+        results = self.translate_batch([text], source_lang, target_lang)
+        return results[0] if results else text
+
+
 def get_translator(service: str, config: dict) -> Translator:
     """Get translator instance for service."""
     if service == 'lingva':
@@ -457,6 +614,23 @@ def get_translator(service: str, config: dict) -> Translator:
         )
     elif service == 'mymemory':
         return MyMemoryTranslator(config.get('email'))
+    elif service == 'deepl':
+        if not config.get('api_key'):
+            raise ValueError("DeepL requires --api-key")
+        return DeepLTranslator(config['api_key'], free=False)
+    elif service == 'deepl-free':
+        if not config.get('api_key'):
+            raise ValueError("DeepL Free requires --api-key")
+        return DeepLTranslator(config['api_key'], free=True)
+    elif service == 'libretranslate':
+        return LibreTranslateTranslator(
+            config.get('url', 'https://libretranslate.com'),
+            config.get('api_key')
+        )
+    elif service == 'google':
+        if not config.get('api_key'):
+            raise ValueError("Google Cloud requires --api-key")
+        return GoogleCloudTranslator(config['api_key'])
     else:
         raise ValueError(f"Unknown service: {service}")
 
@@ -553,20 +727,28 @@ Examples:
   # Translate single file
   po-translate --source en --target ja ./resources/strings.po
 
-Services:
-  lingva     Free, no API key (default)
-  mymemory   Free, 1000 words/day
-  openai     Requires API key (best quality)
-  anthropic  Requires API key (best quality)
+Services (free):
+  lingva        Google Translate frontend (default)
+  mymemory      1000 words/day free
+  libretranslate  Self-hosted or public instances
+
+Services (API key required):
+  deepl         DeepL Pro (best for European languages)
+  deepl-free    DeepL Free API
+  google        Google Cloud Translation
+  openai        GPT models (context-aware)
+  anthropic     Claude models (context-aware)
         """
     )
     
     parser.add_argument('paths', nargs='+', help='Files or directories to translate')
     parser.add_argument('--source', '-s', required=True, help='Source language code (e.g., en)')
     parser.add_argument('--target', '-t', required=True, help='Target language code (e.g., sv, de, fr)')
-    parser.add_argument('--service', default='lingva', choices=['lingva', 'mymemory', 'openai', 'anthropic'],
+    parser.add_argument('--service', default='lingva', 
+                        choices=['lingva', 'mymemory', 'libretranslate', 'deepl', 'deepl-free', 'google', 'openai', 'anthropic'],
                         help='Translation service (default: lingva)')
     parser.add_argument('--api-key', help='API key for paid services')
+    parser.add_argument('--url', help='Custom URL for LibreTranslate')
     parser.add_argument('--model', help='Model for AI services (e.g., gpt-4o-mini, claude-3-haiku-20240307)')
     parser.add_argument('--batch-size', type=int, default=10, help='Entries per API call (default: 10)')
     parser.add_argument('--dry-run', action='store_true', help="Don't save changes")
@@ -578,6 +760,7 @@ Services:
     config = {
         'api_key': args.api_key,
         'model': args.model,
+        'url': args.url,
     }
     
     try:
