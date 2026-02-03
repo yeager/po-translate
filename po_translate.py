@@ -1,0 +1,639 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+po-translate - Batch translate .po and .ts files using AI
+
+Supports:
+- OpenAI (GPT-4, GPT-3.5)
+- Anthropic (Claude)
+- Lingva (free, no API key)
+- Google Translate (free tier via googletrans)
+"""
+
+import argparse
+import json
+import os
+import re
+import sys
+import time
+import urllib.request
+import urllib.parse
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Optional
+
+
+@dataclass
+class TranslationEntry:
+    """A single translation entry."""
+    msgid: str
+    msgstr: str = ""
+    msgctxt: str = ""
+    comments: list = field(default_factory=list)
+    flags: list = field(default_factory=list)
+    line: int = 0
+    
+    @property
+    def needs_translation(self) -> bool:
+        """Check if entry needs translation."""
+        if not self.msgid:  # Header
+            return False
+        if self.msgstr:  # Already translated
+            return False
+        if 'fuzzy' in self.flags:  # Fuzzy = needs review, not retranslation
+            return False
+        return True
+
+
+class POFile:
+    """Parse and write .po files."""
+    
+    def __init__(self, filepath: str):
+        self.filepath = filepath
+        self.entries: list[TranslationEntry] = []
+        self.header = ""
+        self._parse()
+    
+    def _parse(self):
+        """Parse PO file."""
+        with open(self.filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Split into blocks
+        blocks = re.split(r'\n\n+', content)
+        
+        for block in blocks:
+            if not block.strip():
+                continue
+            
+            entry = self._parse_block(block)
+            if entry:
+                self.entries.append(entry)
+    
+    def _parse_block(self, block: str) -> Optional[TranslationEntry]:
+        """Parse a single PO block."""
+        lines = block.strip().split('\n')
+        
+        entry = TranslationEntry(msgid="", line=0)
+        current_key = None
+        
+        for line in lines:
+            line = line.strip()
+            
+            # Comments
+            if line.startswith('#'):
+                if line.startswith('#,'):
+                    # Flags
+                    flags = line[2:].strip().split(',')
+                    entry.flags = [f.strip() for f in flags]
+                else:
+                    entry.comments.append(line)
+                continue
+            
+            # msgctxt, msgid, msgstr
+            for key in ['msgctxt', 'msgid', 'msgid_plural', 'msgstr']:
+                if line.startswith(key):
+                    match = re.match(rf'{key}(\[\d+\])?\s+"(.*)"', line)
+                    if match:
+                        suffix = match.group(1) or ''
+                        value = self._unescape(match.group(2))
+                        
+                        if key == 'msgid':
+                            entry.msgid = value
+                        elif key == 'msgstr':
+                            entry.msgstr = value
+                        elif key == 'msgctxt':
+                            entry.msgctxt = value
+                        
+                        current_key = key + suffix
+                    break
+            else:
+                # Continuation line
+                if line.startswith('"') and current_key:
+                    match = re.match(r'"(.*)"', line)
+                    if match:
+                        value = self._unescape(match.group(1))
+                        if current_key == 'msgid':
+                            entry.msgid += value
+                        elif current_key == 'msgstr':
+                            entry.msgstr += value
+                        elif current_key == 'msgctxt':
+                            entry.msgctxt += value
+        
+        return entry if entry.msgid or entry.msgstr else None
+    
+    def _unescape(self, s: str) -> str:
+        """Unescape PO string."""
+        return s.replace('\\n', '\n').replace('\\t', '\t').replace('\\"', '"').replace('\\\\', '\\')
+    
+    def _escape(self, s: str) -> str:
+        """Escape string for PO file."""
+        return s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\t', '\\t')
+    
+    def get_untranslated(self) -> list[TranslationEntry]:
+        """Get entries that need translation."""
+        return [e for e in self.entries if e.needs_translation]
+    
+    def save(self, filepath: str = None):
+        """Save PO file."""
+        filepath = filepath or self.filepath
+        
+        lines = []
+        
+        for entry in self.entries:
+            # Comments
+            for comment in entry.comments:
+                lines.append(comment)
+            
+            # Flags
+            if entry.flags:
+                lines.append(f"#, {', '.join(entry.flags)}")
+            
+            # msgctxt
+            if entry.msgctxt:
+                lines.append(f'msgctxt "{self._escape(entry.msgctxt)}"')
+            
+            # msgid
+            lines.append(f'msgid "{self._escape(entry.msgid)}"')
+            
+            # msgstr
+            lines.append(f'msgstr "{self._escape(entry.msgstr)}"')
+            
+            lines.append('')
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(lines))
+
+
+class TSFile:
+    """Parse and write Qt .ts files."""
+    
+    def __init__(self, filepath: str):
+        self.filepath = filepath
+        self.entries: list[TranslationEntry] = []
+        self.root = None
+        self._parse()
+    
+    def _parse(self):
+        """Parse TS file."""
+        import xml.etree.ElementTree as ET
+        
+        self.tree = ET.parse(self.filepath)
+        self.root = self.tree.getroot()
+        
+        for context in self.root.findall('.//context'):
+            context_name = context.findtext('name', '')
+            
+            for message in context.findall('message'):
+                source = message.findtext('source', '')
+                translation_elem = message.find('translation')
+                
+                translation = ''
+                flags = []
+                
+                if translation_elem is not None:
+                    translation = translation_elem.text or ''
+                    if translation_elem.get('type') == 'unfinished':
+                        flags.append('unfinished')
+                
+                entry = TranslationEntry(
+                    msgid=source,
+                    msgstr=translation,
+                    msgctxt=context_name,
+                    flags=flags
+                )
+                entry._message_elem = message  # Keep reference for saving
+                self.entries.append(entry)
+    
+    def get_untranslated(self) -> list[TranslationEntry]:
+        """Get entries that need translation."""
+        return [e for e in self.entries if e.needs_translation or 'unfinished' in e.flags]
+    
+    def save(self, filepath: str = None):
+        """Save TS file."""
+        filepath = filepath or self.filepath
+        
+        for entry in self.entries:
+            if hasattr(entry, '_message_elem'):
+                translation_elem = entry._message_elem.find('translation')
+                if translation_elem is not None:
+                    translation_elem.text = entry.msgstr
+                    if entry.msgstr:
+                        # Remove 'unfinished' type when translated
+                        if 'type' in translation_elem.attrib:
+                            del translation_elem.attrib['type']
+        
+        self.tree.write(filepath, encoding='utf-8', xml_declaration=True)
+
+
+class Translator:
+    """Base translator class."""
+    
+    def translate(self, text: str, source_lang: str, target_lang: str) -> str:
+        raise NotImplementedError
+    
+    def translate_batch(self, texts: list[str], source_lang: str, target_lang: str) -> list[str]:
+        """Translate multiple texts (default: one by one)."""
+        results = []
+        for text in texts:
+            results.append(self.translate(text, source_lang, target_lang))
+            time.sleep(0.1)  # Rate limiting
+        return results
+
+
+class LingvaTranslator(Translator):
+    """Free translation via Lingva (Google Translate frontend)."""
+    
+    def __init__(self, url: str = "https://lingva.ml"):
+        self.base_url = url.rstrip('/')
+    
+    def translate(self, text: str, source_lang: str, target_lang: str) -> str:
+        if not text.strip():
+            return ""
+        
+        # Lingva API: /api/v1/{source}/{target}/{text}
+        encoded_text = urllib.parse.quote(text)
+        url = f"{self.base_url}/api/v1/{source_lang}/{target_lang}/{encoded_text}"
+        
+        req = urllib.request.Request(url, headers={'User-Agent': 'po-translate/1.0'})
+        
+        try:
+            response = urllib.request.urlopen(req, timeout=30)
+            data = json.loads(response.read().decode())
+            return data.get('translation', text)
+        except Exception as e:
+            print(f"  ⚠️ Lingva error: {e}", file=sys.stderr)
+            return text
+
+
+class OpenAITranslator(Translator):
+    """Translation via OpenAI API."""
+    
+    def __init__(self, api_key: str, model: str = "gpt-4o-mini", base_url: str = None):
+        self.api_key = api_key
+        self.model = model
+        self.base_url = base_url or "https://api.openai.com/v1"
+    
+    def translate_batch(self, texts: list[str], source_lang: str, target_lang: str) -> list[str]:
+        """Translate batch using single API call."""
+        if not texts:
+            return []
+        
+        # Build prompt with numbered items
+        items = "\n".join(f"{i+1}. {t}" for i, t in enumerate(texts))
+        
+        prompt = f"""Translate the following {len(texts)} UI strings from {source_lang} to {target_lang}.
+Keep placeholders like {{0}}, %s, %d exactly as they are.
+Keep it concise - these are UI labels.
+Return ONLY the translations, one per line, numbered:
+
+{items}"""
+        
+        url = f"{self.base_url}/chat/completions"
+        
+        data = json.dumps({
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": "You are a professional translator for software localization. Translate accurately and concisely."},
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.3
+        }).encode()
+        
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={
+                'Authorization': f'Bearer {self.api_key}',
+                'Content-Type': 'application/json',
+                'User-Agent': 'po-translate/1.0'
+            }
+        )
+        
+        try:
+            response = urllib.request.urlopen(req, timeout=60)
+            result = json.loads(response.read().decode())
+            content = result['choices'][0]['message']['content']
+            
+            # Parse numbered responses
+            translations = []
+            for line in content.strip().split('\n'):
+                # Remove numbering (1. 2. etc)
+                match = re.match(r'^\d+\.\s*(.+)$', line.strip())
+                if match:
+                    translations.append(match.group(1))
+            
+            # Pad with originals if we didn't get enough
+            while len(translations) < len(texts):
+                translations.append(texts[len(translations)])
+            
+            return translations[:len(texts)]
+            
+        except Exception as e:
+            print(f"  ⚠️ OpenAI error: {e}", file=sys.stderr)
+            return texts
+    
+    def translate(self, text: str, source_lang: str, target_lang: str) -> str:
+        results = self.translate_batch([text], source_lang, target_lang)
+        return results[0] if results else text
+
+
+class AnthropicTranslator(Translator):
+    """Translation via Anthropic API."""
+    
+    def __init__(self, api_key: str, model: str = "claude-3-haiku-20240307"):
+        self.api_key = api_key
+        self.model = model
+    
+    def translate_batch(self, texts: list[str], source_lang: str, target_lang: str) -> list[str]:
+        """Translate batch using single API call."""
+        if not texts:
+            return []
+        
+        items = "\n".join(f"{i+1}. {t}" for i, t in enumerate(texts))
+        
+        prompt = f"""Translate these {len(texts)} UI strings from {source_lang} to {target_lang}.
+Keep placeholders like {{0}}, %s, %d exactly as they are.
+Return ONLY the translations, one per line, numbered:
+
+{items}"""
+        
+        url = "https://api.anthropic.com/v1/messages"
+        
+        data = json.dumps({
+            "model": self.model,
+            "max_tokens": 4096,
+            "messages": [{"role": "user", "content": prompt}]
+        }).encode()
+        
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={
+                'x-api-key': self.api_key,
+                'anthropic-version': '2023-06-01',
+                'Content-Type': 'application/json',
+                'User-Agent': 'po-translate/1.0'
+            }
+        )
+        
+        try:
+            response = urllib.request.urlopen(req, timeout=60)
+            result = json.loads(response.read().decode())
+            content = result['content'][0]['text']
+            
+            translations = []
+            for line in content.strip().split('\n'):
+                match = re.match(r'^\d+\.\s*(.+)$', line.strip())
+                if match:
+                    translations.append(match.group(1))
+            
+            while len(translations) < len(texts):
+                translations.append(texts[len(translations)])
+            
+            return translations[:len(texts)]
+            
+        except Exception as e:
+            print(f"  ⚠️ Anthropic error: {e}", file=sys.stderr)
+            return texts
+    
+    def translate(self, text: str, source_lang: str, target_lang: str) -> str:
+        results = self.translate_batch([text], source_lang, target_lang)
+        return results[0] if results else text
+
+
+class MyMemoryTranslator(Translator):
+    """Free translation via MyMemory API."""
+    
+    def __init__(self, email: str = None):
+        self.email = email  # Optional, increases rate limit
+    
+    def translate(self, text: str, source_lang: str, target_lang: str) -> str:
+        if not text.strip():
+            return ""
+        
+        params = {
+            'q': text,
+            'langpair': f'{source_lang}|{target_lang}'
+        }
+        if self.email:
+            params['de'] = self.email
+        
+        url = f"https://api.mymemory.translated.net/get?{urllib.parse.urlencode(params)}"
+        
+        req = urllib.request.Request(url, headers={'User-Agent': 'po-translate/1.0'})
+        
+        try:
+            response = urllib.request.urlopen(req, timeout=30)
+            data = json.loads(response.read().decode())
+            
+            if data.get('responseStatus') == 200:
+                return data['responseData']['translatedText']
+            return text
+            
+        except Exception as e:
+            print(f"  ⚠️ MyMemory error: {e}", file=sys.stderr)
+            return text
+
+
+def get_translator(service: str, config: dict) -> Translator:
+    """Get translator instance for service."""
+    if service == 'lingva':
+        return LingvaTranslator(config.get('url', 'https://lingva.ml'))
+    elif service == 'openai':
+        if not config.get('api_key'):
+            raise ValueError("OpenAI requires --api-key")
+        return OpenAITranslator(
+            config['api_key'],
+            config.get('model', 'gpt-4o-mini'),
+            config.get('base_url')
+        )
+    elif service == 'anthropic':
+        if not config.get('api_key'):
+            raise ValueError("Anthropic requires --api-key")
+        return AnthropicTranslator(
+            config['api_key'],
+            config.get('model', 'claude-3-haiku-20240307')
+        )
+    elif service == 'mymemory':
+        return MyMemoryTranslator(config.get('email'))
+    else:
+        raise ValueError(f"Unknown service: {service}")
+
+
+def translate_file(filepath: str, translator: Translator, source_lang: str, target_lang: str, 
+                   batch_size: int = 10, dry_run: bool = False) -> dict:
+    """Translate a single file."""
+    ext = Path(filepath).suffix.lower()
+    
+    # Parse file
+    if ext == '.po':
+        po_file = POFile(filepath)
+    elif ext == '.ts':
+        po_file = TSFile(filepath)
+    else:
+        return {'error': f'Unsupported format: {ext}'}
+    
+    # Get untranslated entries
+    untranslated = po_file.get_untranslated()
+    
+    if not untranslated:
+        return {'translated': 0, 'total': len(po_file.entries)}
+    
+    print(f"  📝 {len(untranslated)} strings to translate...")
+    
+    # Translate in batches
+    translated_count = 0
+    
+    for i in range(0, len(untranslated), batch_size):
+        batch = untranslated[i:i + batch_size]
+        texts = [e.msgid for e in batch]
+        
+        print(f"  🔄 Batch {i//batch_size + 1}/{(len(untranslated) + batch_size - 1)//batch_size}...", end=' ', flush=True)
+        
+        translations = translator.translate_batch(texts, source_lang, target_lang)
+        
+        for entry, translation in zip(batch, translations):
+            entry.msgstr = translation
+            translated_count += 1
+        
+        print(f"✓")
+        
+        # Rate limiting between batches
+        if i + batch_size < len(untranslated):
+            time.sleep(0.5)
+    
+    # Save file
+    if not dry_run:
+        po_file.save()
+        print(f"  💾 Saved: {filepath}")
+    else:
+        print(f"  🔍 Dry run: would save {filepath}")
+    
+    return {
+        'translated': translated_count,
+        'total': len(po_file.entries),
+        'filepath': filepath
+    }
+
+
+def find_files(paths: list[str], recursive: bool = True) -> list[str]:
+    """Find all .po and .ts files."""
+    files = []
+    
+    for path in paths:
+        path = Path(path)
+        
+        if path.is_file():
+            if path.suffix.lower() in ('.po', '.ts'):
+                files.append(str(path))
+        elif path.is_dir():
+            pattern = '**/*' if recursive else '*'
+            for ext in ('.po', '.ts'):
+                files.extend(str(f) for f in path.glob(f'{pattern}{ext}'))
+    
+    return files
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='po-translate - Batch translate .po and .ts files',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Translate with free Lingva service
+  po-translate --source en --target sv ./translations/
+  
+  # Translate with OpenAI
+  po-translate --service openai --api-key sk-xxx --source en --target de ./po/
+  
+  # Dry run (don't save)
+  po-translate --dry-run --source en --target fr messages.po
+  
+  # Translate single file
+  po-translate --source en --target ja ./resources/strings.po
+
+Services:
+  lingva     Free, no API key (default)
+  mymemory   Free, 1000 words/day
+  openai     Requires API key (best quality)
+  anthropic  Requires API key (best quality)
+        """
+    )
+    
+    parser.add_argument('paths', nargs='+', help='Files or directories to translate')
+    parser.add_argument('--source', '-s', required=True, help='Source language code (e.g., en)')
+    parser.add_argument('--target', '-t', required=True, help='Target language code (e.g., sv, de, fr)')
+    parser.add_argument('--service', default='lingva', choices=['lingva', 'mymemory', 'openai', 'anthropic'],
+                        help='Translation service (default: lingva)')
+    parser.add_argument('--api-key', help='API key for paid services')
+    parser.add_argument('--model', help='Model for AI services (e.g., gpt-4o-mini, claude-3-haiku-20240307)')
+    parser.add_argument('--batch-size', type=int, default=10, help='Entries per API call (default: 10)')
+    parser.add_argument('--dry-run', action='store_true', help="Don't save changes")
+    parser.add_argument('--no-recursive', action='store_true', help="Don't search subdirectories")
+    
+    args = parser.parse_args()
+    
+    # Get translator
+    config = {
+        'api_key': args.api_key,
+        'model': args.model,
+    }
+    
+    try:
+        translator = get_translator(args.service, config)
+    except ValueError as e:
+        print(f"❌ Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    
+    # Find files
+    files = find_files(args.paths, recursive=not args.no_recursive)
+    
+    if not files:
+        print("❌ No .po or .ts files found", file=sys.stderr)
+        sys.exit(1)
+    
+    print(f"🌐 po-translate - {args.source} → {args.target}")
+    print(f"📦 Service: {args.service}")
+    print(f"📂 Files: {len(files)}")
+    print()
+    
+    # Translate files
+    total_translated = 0
+    total_entries = 0
+    
+    for filepath in files:
+        print(f"📄 {filepath}")
+        
+        try:
+            result = translate_file(
+                filepath,
+                translator,
+                args.source,
+                args.target,
+                batch_size=args.batch_size,
+                dry_run=args.dry_run
+            )
+            
+            if 'error' in result:
+                print(f"  ❌ {result['error']}")
+            else:
+                total_translated += result['translated']
+                total_entries += result['total']
+                
+        except Exception as e:
+            print(f"  ❌ Error: {e}", file=sys.stderr)
+        
+        print()
+    
+    # Summary
+    print("=" * 40)
+    print(f"✅ Done! Translated {total_translated} strings")
+    print(f"   Total entries: {total_entries}")
+    
+    if args.dry_run:
+        print("   (dry run - no files modified)")
+
+
+if __name__ == '__main__':
+    main()
