@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# SPDX-License-Identifier: GPL-3.0-or-later
+# po-translate - Batch translate .po and .ts files
+# Copyright (C) 2026 Daniel Nylander <daniel@danielnylander.se>
 """
 po-translate - Batch translate .po and .ts files using AI
 
@@ -11,7 +14,9 @@ Supports:
 """
 
 import argparse
+import gettext
 import json
+import locale
 import os
 import re
 import sys
@@ -21,6 +26,36 @@ import urllib.parse
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
+
+__version__ = "1.1.0"
+
+# Translation setup
+DOMAIN = "po-translate"
+
+# Look for locale in multiple places
+_possible_locale_dirs = [
+    Path(__file__).parent / "locale",  # Development
+    Path("/usr/share/po-translate/locale"),  # System install
+    Path("/usr/local/share/po-translate/locale"),  # Local install
+]
+LOCALE_DIR = None
+for _dir in _possible_locale_dirs:
+    if _dir.exists():
+        LOCALE_DIR = _dir
+        break
+
+# Initialize gettext - detect language
+_system_lang = locale.getlocale()[0] or os.environ.get("LANG", "en")
+_lang_code = _system_lang.split("_")[0].split(".")[0] if _system_lang else "en"
+
+try:
+    if LOCALE_DIR:
+        translation = gettext.translation(DOMAIN, LOCALE_DIR, languages=[_lang_code], fallback=True)
+    else:
+        translation = gettext.NullTranslations()
+    _ = translation.gettext
+except Exception:
+    def _(s): return s
 
 
 @dataclass
@@ -711,9 +746,9 @@ def find_files(paths: list[str], recursive: bool = True) -> list[str]:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='po-translate - Batch translate .po and .ts files',
+        description=_('po-translate - Batch translate .po and .ts files'),
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+        epilog=_("""
 Examples:
   # Translate with free Lingva service
   po-translate --source en --target sv ./translations/
@@ -738,21 +773,22 @@ Services (API key required):
   google        Google Cloud Translation
   openai        GPT models (context-aware)
   anthropic     Claude models (context-aware)
-        """
+        """)
     )
     
-    parser.add_argument('paths', nargs='+', help='Files or directories to translate')
-    parser.add_argument('--source', '-s', required=True, help='Source language code (e.g., en)')
-    parser.add_argument('--target', '-t', required=True, help='Target language code (e.g., sv, de, fr)')
+    parser.add_argument('paths', nargs='+', help=_('Files or directories to translate'))
+    parser.add_argument('--source', '-s', required=True, help=_('Source language code (e.g., en)'))
+    parser.add_argument('--target', '-t', required=True, help=_('Target language code (e.g., sv, de, fr)'))
     parser.add_argument('--service', default='lingva', 
                         choices=['lingva', 'mymemory', 'libretranslate', 'deepl', 'deepl-free', 'google', 'openai', 'anthropic'],
-                        help='Translation service (default: lingva)')
-    parser.add_argument('--api-key', help='API key for paid services')
-    parser.add_argument('--url', help='Custom URL for LibreTranslate')
-    parser.add_argument('--model', help='Model for AI services (e.g., gpt-4o-mini, claude-3-haiku-20240307)')
-    parser.add_argument('--batch-size', type=int, default=10, help='Entries per API call (default: 10)')
-    parser.add_argument('--dry-run', action='store_true', help="Don't save changes")
-    parser.add_argument('--no-recursive', action='store_true', help="Don't search subdirectories")
+                        help=_('Translation service (default: lingva)'))
+    parser.add_argument('--api-key', help=_('API key for paid services'))
+    parser.add_argument('--url', help=_('Custom URL for LibreTranslate'))
+    parser.add_argument('--model', help=_('Model for AI services (e.g., gpt-4o-mini, claude-3-haiku-20240307)'))
+    parser.add_argument('--batch-size', type=int, default=10, help=_('Entries per API call (default: 10)'))
+    parser.add_argument('--dry-run', action='store_true', help=_("Don't save changes"))
+    parser.add_argument('--no-recursive', action='store_true', help=_("Don't search subdirectories"))
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {__version__}')
     
     args = parser.parse_args()
     
@@ -766,19 +802,19 @@ Services (API key required):
     try:
         translator = get_translator(args.service, config)
     except ValueError as e:
-        print(f"❌ Error: {e}", file=sys.stderr)
+        print(_("❌ Error: {error}").format(error=e), file=sys.stderr)
         sys.exit(1)
     
     # Find files
     files = find_files(args.paths, recursive=not args.no_recursive)
     
     if not files:
-        print("❌ No .po or .ts files found", file=sys.stderr)
+        print(_("❌ No .po or .ts files found"), file=sys.stderr)
         sys.exit(1)
     
-    print(f"🌐 po-translate - {args.source} → {args.target}")
-    print(f"📦 Service: {args.service}")
-    print(f"📂 Files: {len(files)}")
+    print(_("🌐 po-translate - {source} → {target}").format(source=args.source, target=args.target))
+    print(_("📦 Service: {service}").format(service=args.service))
+    print(_("📂 Files: {count}").format(count=len(files)))
     print()
     
     # Translate files
@@ -799,23 +835,23 @@ Services (API key required):
             )
             
             if 'error' in result:
-                print(f"  ❌ {result['error']}")
+                print(_("  ❌ {error}").format(error=result['error']))
             else:
                 total_translated += result['translated']
                 total_entries += result['total']
                 
         except Exception as e:
-            print(f"  ❌ Error: {e}", file=sys.stderr)
+            print(_("  ❌ Error: {error}").format(error=e), file=sys.stderr)
         
         print()
     
     # Summary
     print("=" * 40)
-    print(f"✅ Done! Translated {total_translated} strings")
-    print(f"   Total entries: {total_entries}")
+    print(_("✅ Done! Translated {count} strings").format(count=total_translated))
+    print(_("   Total entries: {count}").format(count=total_entries))
     
     if args.dry_run:
-        print("   (dry run - no files modified)")
+        print(_("   (dry run - no files modified)"))
 
 
 if __name__ == '__main__':
