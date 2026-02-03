@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 # Translation setup
 DOMAIN = "po-translate"
@@ -631,7 +631,7 @@ class GoogleCloudTranslator(Translator):
 def get_translator(service: str, config: dict) -> Translator:
     """Get translator instance for service."""
     if service == 'lingva':
-        return LingvaTranslator(config.get('url', 'https://lingva.ml'))
+        return LingvaTranslator(config.get('url') or 'https://lingva.ml')
     elif service == 'openai':
         if not config.get('api_key'):
             raise ValueError("OpenAI requires --api-key")
