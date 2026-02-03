@@ -12,12 +12,26 @@
 
 ## Installation
 
+### Debian/Ubuntu (.deb)
+
+```bash
+wget https://github.com/yeager/po-translate/releases/download/v1.0.0/po-translate_1.0.0_all.deb
+sudo dpkg -i po-translate_1.0.0_all.deb
+```
+
+### Fedora/RHEL (.rpm)
+
+```bash
+wget https://github.com/yeager/po-translate/releases/download/v1.0.0/po-translate-1.0.0-1.noarch.rpm
+sudo rpm -i po-translate-1.0.0-1.noarch.rpm
+```
+
+### From source
+
 ```bash
 git clone https://github.com/yeager/po-translate.git
 cd po-translate
 chmod +x po_translate.py
-
-# Optional: symlink to PATH
 ln -s $(pwd)/po_translate.py /usr/local/bin/po-translate
 ```
 
