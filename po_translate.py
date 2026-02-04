@@ -744,10 +744,24 @@ def find_files(paths: list[str], recursive: bool = True) -> list[str]:
     return files
 
 
+class TranslatedHelpFormatter(argparse.RawDescriptionHelpFormatter):
+    """Custom formatter that translates argparse default strings."""
+    
+    def start_section(self, heading):
+        translations = {
+            'positional arguments': _('positional arguments'),
+            'options': _('options'),
+            'optional arguments': _('options'),
+        }
+        heading = translations.get(heading, heading)
+        super().start_section(heading)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=_('po-translate - Batch translate .po and .ts files'),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        add_help=False,
+        formatter_class=TranslatedHelpFormatter,
         epilog=_("""
 Examples:
   # Translate with free Lingva service
@@ -789,7 +803,9 @@ Services (API key required):
     parser.add_argument('--dry-run', action='store_true', help=_("Don't save changes"))
     parser.add_argument('--no-recursive', action='store_true', help=_("Don't search subdirectories"))
     parser.add_argument('-V', '--verbose', action='store_true', help=_('Show detailed progress'))
-    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {__version__}')
+    parser.add_argument('-h', '--help', action='help', help=_('Show this help message and exit'))
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {__version__}',
+                        help=_('Show version number and exit'))
     
     args = parser.parse_args()
     
