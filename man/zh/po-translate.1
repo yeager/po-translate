@@ -1,17 +1,17 @@
 .TH PO-TRANSLATE 1 "February 2026" "po-translate 1.3.1" "User Commands"
-.SH NAMN
+.SH 名称
 po-translate \- batch translate PO and TS localization files
-.SH SYNOPSIS
+.SH 概要
 .B po-translate
 \fB\-\-source\fR \fILANG\fR [\fB\-\-target\fR \fILANG\fR] [\fIOPTIONS\fR] \fIPATH\fR...
-.SH BESKRIVNING
+.SH 描述
 .B po-translate
 automatically translates gettext .po and Qt .ts files using various
 translation services, both free and commercial.
 .PP
 If \fB\-\-target\fR is not specified, the target language is detected
 from the \fBLANG\fR environment variable.
-.SH FLAGGOR
+.SH 选项
 .TP
 .BR \-h ", " \-\-help
 Show help message and exit.
@@ -43,7 +43,7 @@ Preview changes without saving.
 .TP
 .BR \-\-no\-recursive
 Do not search subdirectories.
-.SH TJÄNSTER
+.SH 服务
 .TP
 .B lingva
 Free, no API key required. Uses Lingva Translate instances.
@@ -65,14 +65,14 @@ GPT models with context awareness. Requires API key.
 .TP
 .B anthropic
 Claude models with context awareness. Requires API key.
-.SH SLUTSTATUS
+.SH 退出状态
 .TP
 .B 0
 Success.
 .TP
 .B 1
 Error occurred.
-.SH EXEMPEL
+.SH 示例
 .TP
 Translate to system language (from LANG):
 .B po-translate \-\-source en messages.po
@@ -85,7 +85,7 @@ Use DeepL with API key:
 .TP
 Dry run with OpenAI:
 .B po-translate \-s en \-t fr \-\-service openai \-\-dry\-run .
-.SH MILJÖVARIABLER
+.SH 环境变量
 .TP
 .B LANG
 Used as default target language if \-\-target not specified.
@@ -98,12 +98,12 @@ API key for Anthropic service.
 .TP
 .B DEEPL_API_KEY
 API key for DeepL service.
-.SH UPPHOVSMAN
+.SH 作者
 Daniel Nylander <daniel@danielnylander.se>
-.SH SE ÄVEN
+.SH 另请参阅
 .BR l10n-lint (1),
 .BR tp-lint (1),
 .BR msgfmt (1),
 .BR msginit (1)
-.SH BUGGAR
+.SH 缺陷
 Report bugs at: https://github.com/yeager/po-translate/issues
