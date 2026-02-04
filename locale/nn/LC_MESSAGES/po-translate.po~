@@ -1,0 +1,141 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-03 09:48+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: nn\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: po_translate.py:749
+msgid "po-translate - Batch translate .po and .ts files"
+msgstr ""
+
+#: po_translate.py:751
+msgid ""
+"\n"
+"Examples:\n"
+"  # Translate with free Lingva service\n"
+"  po-translate --source en --target sv ./translations/\n"
+"  \n"
+"  # Translate with OpenAI\n"
+"  po-translate --service openai --api-key sk-xxx --source en --target de ./"
+"po/\n"
+"  \n"
+"  # Dry run (don't save)\n"
+"  po-translate --dry-run --source en --target fr messages.po\n"
+"  \n"
+"  # Translate single file\n"
+"  po-translate --source en --target ja ./resources/strings.po\n"
+"\n"
+"Services (free):\n"
+"  lingva        Google Translate frontend (default)\n"
+"  mymemory      1000 words/day free\n"
+"  libretranslate  Self-hosted or public instances\n"
+"\n"
+"Services (API key required):\n"
+"  deepl         DeepL Pro (best for European languages)\n"
+"  deepl-free    DeepL Free API\n"
+"  google        Google Cloud Translation\n"
+"  openai        GPT models (context-aware)\n"
+"  anthropic     Claude models (context-aware)\n"
+"        "
+msgstr ""
+
+#: po_translate.py:779
+msgid "Files or directories to translate"
+msgstr ""
+
+#: po_translate.py:780
+msgid "Source language code (e.g., en)"
+msgstr ""
+
+#: po_translate.py:781
+msgid "Target language code (e.g., sv, de, fr)"
+msgstr ""
+
+#: po_translate.py:784
+msgid "Translation service (default: lingva)"
+msgstr ""
+
+#: po_translate.py:785
+msgid "API key for paid services"
+msgstr ""
+
+#: po_translate.py:786
+msgid "Custom URL for LibreTranslate"
+msgstr ""
+
+#: po_translate.py:787
+msgid "Model for AI services (e.g., gpt-4o-mini, claude-3-haiku-20240307)"
+msgstr ""
+
+#: po_translate.py:788
+msgid "Entries per API call (default: 10)"
+msgstr ""
+
+#: po_translate.py:789
+msgid "Don't save changes"
+msgstr ""
+
+#: po_translate.py:790
+msgid "Don't search subdirectories"
+msgstr ""
+
+#: po_translate.py:805
+#, python-brace-format
+msgid "❌ Error: {error}"
+msgstr ""
+
+#: po_translate.py:812
+msgid "❌ No .po or .ts files found"
+msgstr ""
+
+#: po_translate.py:815
+#, python-brace-format
+msgid "🌐 po-translate - {source} → {target}"
+msgstr ""
+
+#: po_translate.py:816
+#, python-brace-format
+msgid "📦 Service: {service}"
+msgstr ""
+
+#: po_translate.py:817
+#, python-brace-format
+msgid "📂 Files: {count}"
+msgstr ""
+
+#: po_translate.py:838
+#, python-brace-format
+msgid "  ❌ {error}"
+msgstr ""
+
+#: po_translate.py:844
+#, python-brace-format
+msgid "  ❌ Error: {error}"
+msgstr ""
+
+#: po_translate.py:850
+#, python-brace-format
+msgid "✅ Done! Translated {count} strings"
+msgstr ""
+
+#: po_translate.py:851
+#, python-brace-format
+msgid "   Total entries: {count}"
+msgstr ""
+
+#: po_translate.py:854
+msgid "   (dry run - no files modified)"
+msgstr ""

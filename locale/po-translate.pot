@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-03 09:51+0100\n"
+"POT-Creation-Date: 2026-02-04 17:40+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -61,7 +61,7 @@ msgid "Source language code (e.g., en)"
 msgstr ""
 
 #: po_translate.py:781
-msgid "Target language code (e.g., sv, de, fr)"
+msgid "Target language code (e.g., sv, de, fr). Defaults to system LANG."
 msgstr ""
 
 #: po_translate.py:784
@@ -92,50 +92,144 @@ msgstr ""
 msgid "Don't search subdirectories"
 msgstr ""
 
-#: po_translate.py:805
-#, python-brace-format
-msgid "❌ Error: {error}"
+#: po_translate.py:791
+msgid "Show detailed progress"
 msgstr ""
 
-#: po_translate.py:812
-msgid "❌ No .po or .ts files found"
+#: po_translate.py:802
+#, python-brace-format
+msgid "🔧 po-translate {version} starting..."
+msgstr ""
+
+#: po_translate.py:803
+#, python-brace-format
+msgid "   Source language: {lang}"
+msgstr ""
+
+#: po_translate.py:804
+#, python-brace-format
+msgid "   Service: {service}"
+msgstr ""
+
+#: po_translate.py:805
+#, python-brace-format
+msgid "   Batch size: {size}"
+msgstr ""
+
+#: po_translate.py:806
+#, python-brace-format
+msgid "   Dry run: {dry}"
 msgstr ""
 
 #: po_translate.py:815
-#, python-brace-format
-msgid "🌐 po-translate - {source} → {target}"
-msgstr ""
-
-#: po_translate.py:816
-#, python-brace-format
-msgid "📦 Service: {service}"
+msgid "❌ Error: --target required (could not detect from LANG environment)"
 msgstr ""
 
 #: po_translate.py:817
 #, python-brace-format
-msgid "📂 Files: {count}"
+msgid "ℹ️  Using target language from LANG: {lang}"
 msgstr ""
 
-#: po_translate.py:838
+#: po_translate.py:829
 #, python-brace-format
-msgid "  ❌ {error}"
+msgid "❌ Error: {error}"
+msgstr ""
+
+#: po_translate.py:832
+#, python-brace-format
+msgid "   Target language: {lang}"
+msgstr ""
+
+#: po_translate.py:835
+msgid "📂 Scanning for files..."
+msgstr ""
+
+#: po_translate.py:839
+msgid "❌ No .po or .ts files found"
+msgstr ""
+
+#: po_translate.py:842
+#, python-brace-format
+msgid "   Found {count} files to process"
 msgstr ""
 
 #: po_translate.py:844
 #, python-brace-format
+msgid "🌐 po-translate - {source} → {target}"
+msgstr ""
+
+#: po_translate.py:845
+#, python-brace-format
+msgid "📦 Service: {service}"
+msgstr ""
+
+#: po_translate.py:846
+#, python-brace-format
+msgid "📂 Files: {count}"
+msgstr ""
+
+#: po_translate.py:854
+#, python-brace-format
+msgid "📄 [{current}/{total}] Processing: {file}"
+msgstr ""
+
+#: po_translate.py:859
+msgid "   Parsing file..."
+msgstr ""
+
+#: po_translate.py:870
+#, python-brace-format
+msgid "  ❌ {error}"
+msgstr ""
+
+#: po_translate.py:871
+msgid "   Error processing file"
+msgstr ""
+
+#: po_translate.py:875
+#, python-brace-format
+msgid "   Translated {count} of {total} entries"
+msgstr ""
+
+#: po_translate.py:879
+#, python-brace-format
 msgid "  ❌ Error: {error}"
 msgstr ""
 
-#: po_translate.py:850
+#: po_translate.py:880
 #, python-brace-format
-msgid "✅ Done! Translated {count} strings"
+msgid "   Exception: {type}"
 msgstr ""
 
-#: po_translate.py:851
+#: po_translate.py:886
+msgid "📊 Summary:"
+msgstr ""
+
+#: po_translate.py:887
+#, python-brace-format
+msgid "   Files processed: {count}"
+msgstr ""
+
+#: po_translate.py:888
+#, python-brace-format
+msgid "   Strings translated: {count}"
+msgstr ""
+
+#: po_translate.py:889 po_translate.py:895
 #, python-brace-format
 msgid "   Total entries: {count}"
 msgstr ""
 
-#: po_translate.py:854
+#: po_translate.py:890
+#, python-brace-format
+msgid "   Service used: {service}"
+msgstr ""
+
+#: po_translate.py:894
+#, python-brace-format
+msgid "✅ Done! Translated {count} strings"
+msgstr ""
+
+#: po_translate.py:898
 msgid "   (dry run - no files modified)"
 msgstr ""
