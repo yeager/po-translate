@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.2] - 2026-02-04
+
+### Added
+- **Man page**: `man po-translate` now available
+  - Installed to `/usr/share/man/man1/po-translate.1.gz`
+
 ## [1.3.1] - 2026-02-04
 
 ### Changed
