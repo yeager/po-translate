@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-__version__ = "1.3.2"
+__version__ = "1.3.3"
 
 # Translation setup
 DOMAIN = "po-translate"

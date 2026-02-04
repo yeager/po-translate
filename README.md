@@ -16,34 +16,34 @@
 ### Debian/Ubuntu
 
 ```bash
-wget https://github.com/yeager/po-translate/releases/download/v1.3.2/po-translate_1.3.2_all.deb
-sudo dpkg -i po-translate_1.3.2_all.deb
+wget https://github.com/yeager/po-translate/releases/download/v1.3.3/po-translate_1.3.3_all.deb
+sudo dpkg -i po-translate_1.3.3_all.deb
 ```
 
 ### Fedora/RHEL/openSUSE
 
 ```bash
-wget https://github.com/yeager/po-translate/releases/download/v1.3.2/po-translate-1.3.2-1.noarch.rpm
-sudo rpm -i po-translate-1.3.2-1.noarch.rpm
+wget https://github.com/yeager/po-translate/releases/download/v1.3.3/po-translate-1.3.3-1.noarch.rpm
+sudo rpm -i po-translate-1.3.3-1.noarch.rpm
 ```
 
 ### Arch Linux
 
 ```bash
-wget https://github.com/yeager/po-translate/releases/download/v1.3.2/po-translate-1.3.2.pkg.tar.zst
-sudo pacman -U po-translate-1.3.2.pkg.tar.zst
+wget https://github.com/yeager/po-translate/releases/download/v1.3.3/po-translate-1.3.3.pkg.tar.zst
+sudo pacman -U po-translate-1.3.3.pkg.tar.zst
 ```
 
 ### Universal (tar.gz)
 
 ```bash
-wget https://github.com/yeager/po-translate/releases/download/v1.3.2/po-translate-1.3.2.tar.gz
-tar xzf po-translate-1.3.2.tar.gz -C /usr/local
+wget https://github.com/yeager/po-translate/releases/download/v1.3.3/po-translate-1.3.3.tar.gz
+tar xzf po-translate-1.3.3.tar.gz -C /usr/local
 ```
 
 ### Windows/macOS (zip)
 
-Download [po-translate-1.3.2.zip](https://github.com/yeager/po-translate/releases/download/v1.3.2/po-translate-1.3.2.zip), extract, and add to PATH.
+Download [po-translate-1.3.3.zip](https://github.com/yeager/po-translate/releases/download/v1.3.3/po-translate-1.3.3.zip), extract, and add to PATH.
 
 ### From source
 
