@@ -35,8 +35,7 @@ DOMAIN = "po-translate"
 # Look for locale in multiple places
 _possible_locale_dirs = [
     Path(__file__).parent / "locale",  # Development
-    Path("/usr/share/po-translate/locale"),  # System install
-    Path("/usr/local/share/po-translate/locale"),  # Local install
+    Path("/usr/share/po-translate/locale"),  # System install (Debian)
 ]
 LOCALE_DIR = None
 for _dir in _possible_locale_dirs:
