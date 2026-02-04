@@ -1,103 +1,103 @@
-.TH PO-TRANSLATE 1 "February 2026" "po-translate 1.3.1" "User Commands"
-.SH ИМЯ
-po-translate \- batch translate PO and TS localization files
+.TH PO-TRANSLATE 1 "февраль 2026" "po-translate 1.3.1" "Пользовательские команды"
+.SH НАЗВАНИЕ
+po-translate \- пакетный перевод файлов локализации PO и TS
 .SH СИНТАКСИС
 .B po-translate
-\fB\-\-source\fR \fILANG\fR [\fB\-\-target\fR \fILANG\fR] [\fIOPTIONS\fR] \fIPATH\fR...
+\fB\-\-source\fR \fIЯЗЫК\fR [\fB\-\-target\fR \fIЯЗЫК\fR] [\fIПАРАМЕТРЫ\fR] \fIПУТЬ\fR...
 .SH ОПИСАНИЕ
 .B po-translate
-automatically translates gettext .po and Qt .ts files using various
-translation services, both free and commercial.
+автоматически переводит файлы gettext .po и Qt .ts с использованием различных
+служб перевода, как бесплатных, так и коммерческих.
 .PP
-If \fB\-\-target\fR is not specified, the target language is detected
-from the \fBLANG\fR environment variable.
+Если \fB\-\-target\fR не указан, целевой язык определяется
+из переменной окружения \fBLANG\fR.
 .SH ПАРАМЕТРЫ
 .TP
 .BR \-h ", " \-\-help
-Show help message and exit.
+Показать справочное сообщение и выйти.
 .TP
 .BR \-v ", " \-\-version
-Show version number and exit.
+Показать номер версии и выйти.
 .TP
-.BR \-s ", " \-\-source " " \fILANG\fR
-Source language code (required). Example: en
+.BR \-s ", " \-\-source " " \fIЯЗЫК\fR
+Код исходного языка (обязательный). Пример: en
 .TP
-.BR \-t ", " \-\-target " " \fILANG\fR
-Target language code. Defaults to system LANG.
+.BR \-t ", " \-\-target " " \fIЯЗЫК\fR
+Код целевого языка. По умолчанию системный LANG.
 .TP
-.BR \-\-service " " \fISERVICE\fR
-Translation service (default: lingva).
-Available: lingva, mymemory, libretranslate, deepl, deepl-free, google, openai, anthropic
+.BR \-\-service " " \fIСЛУЖБА\fR
+Служба перевода (по умолчанию: lingva).
+Доступные: lingva, mymemory, libretranslate, deepl, deepl-free, google, openai, anthropic
 .TP
-.BR \-\-api\-key " " \fIKEY\fR
-API key for paid services (DeepL, Google, OpenAI, Anthropic).
+.BR \-\-api\-key " " \fIКЛЮЧ\fR
+API-ключ для платных служб (DeepL, Google, OpenAI, Anthropic).
 .TP
-.BR \-\-model " " \fIMODEL\fR
-Model for AI services. Example: gpt-4o-mini, claude-3-haiku-20240307
+.BR \-\-model " " \fIМОДЕЛЬ\fR
+Модель для служб ИИ. Пример: gpt-4o-mini, claude-3-haiku-20240307
 .TP
 .BR \-\-batch\-size " " \fIN\fR
-Entries per API call (default: 10).
+Записей на вызов API (по умолчанию: 10).
 .TP
 .BR \-\-dry\-run
-Preview changes without saving.
+Предварительный просмотр изменений без сохранения.
 .TP
 .BR \-\-no\-recursive
-Do not search subdirectories.
-.SH СЕРВИСЫ
+Не искать в подкаталогах.
+.SH СЛУЖБЫ
 .TP
 .B lingva
-Free, no API key required. Uses Lingva Translate instances.
+Бесплатная, API-ключ не требуется. Использует экземпляры Lingva Translate.
 .TP
 .B mymemory
-Free tier available. 1000 words/day without key.
+Бесплатный уровень доступен. 1000 слов/день без ключа.
 .TP
 .B libretranslate
-Self-hosted option available. Use \-\-url for custom instance.
+Опция самостоятельного размещения доступна. Используйте \-\-url для пользовательского экземпляра.
 .TP
 .B deepl, deepl-free
-High quality. Requires API key.
+Высокое качество. Требуется API-ключ.
 .TP
 .B google
-Google Cloud Translation. Requires API key.
+Google Cloud Translation. Требуется API-ключ.
 .TP
 .B openai
-GPT models with context awareness. Requires API key.
+Модели GPT с учётом контекста. Требуется API-ключ.
 .TP
 .B anthropic
-Claude models with context awareness. Requires API key.
-.SH КОД ВОЗВРАТА
+Модели Claude с учётом контекста. Требуется API-ключ.
+.SH КОД ЗАВЕРШЕНИЯ
 .TP
 .B 0
-Success.
+Успех.
 .TP
 .B 1
-Error occurred.
+Произошла ошибка.
 .SH ПРИМЕРЫ
 .TP
-Translate to system language (from LANG):
+Перевести на язык системы (из LANG):
 .B po-translate \-\-source en messages.po
 .TP
-Translate English to Swedish using free service:
+Перевести английский на шведский с бесплатной службой:
 .B po-translate \-s en \-t sv locale/
 .TP
-Use DeepL with API key:
-.B po-translate \-s en \-t de \-\-service deepl \-\-api\-key KEY file.po
+Использовать DeepL с API-ключом:
+.B po-translate \-s en \-t de \-\-service deepl \-\-api\-key КЛЮЧ file.po
 .TP
-Dry run with OpenAI:
+Пробный запуск с OpenAI:
 .B po-translate \-s en \-t fr \-\-service openai \-\-dry\-run .
 .SH ОКРУЖЕНИЕ
 .TP
 .B LANG
-Used as default target language if \-\-target not specified.
+Используется как целевой язык по умолчанию, если \-\-target не указан.
 .TP
 .B OPENAI_API_KEY
-API key for OpenAI service.
+API-ключ для службы OpenAI.
 .TP
 .B ANTHROPIC_API_KEY
-API key for Anthropic service.
+API-ключ для службы Anthropic.
 .TP
 .B DEEPL_API_KEY
-API key for DeepL service.
+API-ключ для службы DeepL.
 .SH АВТОР
 Daniel Nylander <daniel@danielnylander.se>
 .SH СМОТРИТЕ ТАКЖЕ
@@ -106,4 +106,4 @@ Daniel Nylander <daniel@danielnylander.se>
 .BR msgfmt (1),
 .BR msginit (1)
 .SH ОШИБКИ
-Report bugs at: https://github.com/yeager/po-translate/issues
+Сообщайте об ошибках на: https://github.com/yeager/po-translate/issues

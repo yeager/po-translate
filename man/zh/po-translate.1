@@ -1,109 +1,109 @@
-.TH PO-TRANSLATE 1 "February 2026" "po-translate 1.3.1" "User Commands"
+.TH PO-TRANSLATE 1 "2026年2月" "po-translate 1.3.1" "用户命令"
 .SH 名称
-po-translate \- batch translate PO and TS localization files
+po-translate \- 批量翻译 PO 和 TS 本地化文件
 .SH 概要
 .B po-translate
-\fB\-\-source\fR \fILANG\fR [\fB\-\-target\fR \fILANG\fR] [\fIOPTIONS\fR] \fIPATH\fR...
+\fB\-\-source\fR \fI语言\fR [\fB\-\-target\fR \fI语言\fR] [\fI选项\fR] \fI路径\fR...
 .SH 描述
 .B po-translate
-automatically translates gettext .po and Qt .ts files using various
-translation services, both free and commercial.
+使用各种翻译服务自动翻译 gettext .po 和 Qt .ts 文件，
+包括免费和商业服务。
 .PP
-If \fB\-\-target\fR is not specified, the target language is detected
-from the \fBLANG\fR environment variable.
+如果未指定 \fB\-\-target\fR，则从 \fBLANG\fR 环境变量
+检测目标语言。
 .SH 选项
 .TP
 .BR \-h ", " \-\-help
-Show help message and exit.
+显示帮助信息并退出。
 .TP
 .BR \-v ", " \-\-version
-Show version number and exit.
+显示版本号并退出。
 .TP
-.BR \-s ", " \-\-source " " \fILANG\fR
-Source language code (required). Example: en
+.BR \-s ", " \-\-source " " \fI语言\fR
+源语言代码（必需）。示例：en
 .TP
-.BR \-t ", " \-\-target " " \fILANG\fR
-Target language code. Defaults to system LANG.
+.BR \-t ", " \-\-target " " \fI语言\fR
+目标语言代码。默认为系统 LANG。
 .TP
-.BR \-\-service " " \fISERVICE\fR
-Translation service (default: lingva).
-Available: lingva, mymemory, libretranslate, deepl, deepl-free, google, openai, anthropic
+.BR \-\-service " " \fI服务\fR
+翻译服务（默认：lingva）。
+可用：lingva, mymemory, libretranslate, deepl, deepl-free, google, openai, anthropic
 .TP
-.BR \-\-api\-key " " \fIKEY\fR
-API key for paid services (DeepL, Google, OpenAI, Anthropic).
+.BR \-\-api\-key " " \fI密钥\fR
+付费服务的 API 密钥（DeepL, Google, OpenAI, Anthropic）。
 .TP
-.BR \-\-model " " \fIMODEL\fR
-Model for AI services. Example: gpt-4o-mini, claude-3-haiku-20240307
+.BR \-\-model " " \fI模型\fR
+AI 服务的模型。示例：gpt-4o-mini, claude-3-haiku-20240307
 .TP
 .BR \-\-batch\-size " " \fIN\fR
-Entries per API call (default: 10).
+每次 API 调用的条目数（默认：10）。
 .TP
 .BR \-\-dry\-run
-Preview changes without saving.
+预览更改而不保存。
 .TP
 .BR \-\-no\-recursive
-Do not search subdirectories.
+不搜索子目录。
 .SH 服务
 .TP
 .B lingva
-Free, no API key required. Uses Lingva Translate instances.
+免费，不需要 API 密钥。使用 Lingva Translate 实例。
 .TP
 .B mymemory
-Free tier available. 1000 words/day without key.
+提供免费层。无密钥每天 1000 词。
 .TP
 .B libretranslate
-Self-hosted option available. Use \-\-url for custom instance.
+提供自托管选项。使用 \-\-url 设置自定义实例。
 .TP
 .B deepl, deepl-free
-High quality. Requires API key.
+高质量。需要 API 密钥。
 .TP
 .B google
-Google Cloud Translation. Requires API key.
+Google Cloud Translation。需要 API 密钥。
 .TP
 .B openai
-GPT models with context awareness. Requires API key.
+具有上下文感知的 GPT 模型。需要 API 密钥。
 .TP
 .B anthropic
-Claude models with context awareness. Requires API key.
+具有上下文感知的 Claude 模型。需要 API 密钥。
 .SH 退出状态
 .TP
 .B 0
-Success.
+成功。
 .TP
 .B 1
-Error occurred.
+发生错误。
 .SH 示例
 .TP
-Translate to system language (from LANG):
+翻译为系统语言（从 LANG）：
 .B po-translate \-\-source en messages.po
 .TP
-Translate English to Swedish using free service:
+使用免费服务将英语翻译为瑞典语：
 .B po-translate \-s en \-t sv locale/
 .TP
-Use DeepL with API key:
-.B po-translate \-s en \-t de \-\-service deepl \-\-api\-key KEY file.po
+使用 API 密钥使用 DeepL：
+.B po-translate \-s en \-t de \-\-service deepl \-\-api\-key 密钥 file.po
 .TP
-Dry run with OpenAI:
+使用 OpenAI 进行试运行：
 .B po-translate \-s en \-t fr \-\-service openai \-\-dry\-run .
-.SH 环境变量
+.SH 环境
 .TP
 .B LANG
-Used as default target language if \-\-target not specified.
+如果未指定 \-\-target，则用作默认目标语言。
 .TP
 .B OPENAI_API_KEY
-API key for OpenAI service.
+OpenAI 服务的 API 密钥。
 .TP
 .B ANTHROPIC_API_KEY
-API key for Anthropic service.
+Anthropic 服务的 API 密钥。
 .TP
 .B DEEPL_API_KEY
-API key for DeepL service.
+DeepL 服务的 API 密钥。
 .SH 作者
 Daniel Nylander <daniel@danielnylander.se>
-.SH 另请参阅
+.SH 另见
 .BR l10n-lint (1),
 .BR tp-lint (1),
 .BR msgfmt (1),
 .BR msginit (1)
-.SH 缺陷
-Report bugs at: https://github.com/yeager/po-translate/issues
+.SH 错误
+在此报告错误：https://github.com/yeager/po-translate/issues

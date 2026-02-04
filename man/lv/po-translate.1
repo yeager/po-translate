@@ -1,103 +1,103 @@
-.TH PO-TRANSLATE 1 "February 2026" "po-translate 1.3.1" "User Commands"
+.TH PO-TRANSLATE 1 "2026. gada februāris" "po-translate 1.3.1" "Lietotāja komandas"
 .SH NOSAUKUMS
-po-translate \- batch translate PO and TS localization files
+po-translate \- PO un TS lokalizācijas failu pakešu tulkošana
 .SH KOPSAVILKUMS
 .B po-translate
-\fB\-\-source\fR \fILANG\fR [\fB\-\-target\fR \fILANG\fR] [\fIOPTIONS\fR] \fIPATH\fR...
+\fB\-\-source\fR \fIVALODA\fR [\fB\-\-target\fR \fIVALODA\fR] [\fIOPCIJAS\fR] \fICEĻŠ\fR...
 .SH APRAKSTS
 .B po-translate
-automatically translates gettext .po and Qt .ts files using various
-translation services, both free and commercial.
+automātiski tulko gettext .po un Qt .ts failus, izmantojot dažādus
+tulkošanas pakalpojumus, gan bezmaksas, gan komerciālus.
 .PP
-If \fB\-\-target\fR is not specified, the target language is detected
-from the \fBLANG\fR environment variable.
+Ja \fB\-\-target\fR nav norādīts, mērķa valoda tiek noteikta
+no \fBLANG\fR vides mainīgā.
 .SH OPCIJAS
 .TP
 .BR \-h ", " \-\-help
-Show help message and exit.
+Rādīt palīdzības ziņojumu un iziet.
 .TP
 .BR \-v ", " \-\-version
-Show version number and exit.
+Rādīt versijas numuru un iziet.
 .TP
-.BR \-s ", " \-\-source " " \fILANG\fR
-Source language code (required). Example: en
+.BR \-s ", " \-\-source " " \fIVALODA\fR
+Avota valodas kods (obligāts). Piemērs: en
 .TP
-.BR \-t ", " \-\-target " " \fILANG\fR
-Target language code. Defaults to system LANG.
+.BR \-t ", " \-\-target " " \fIVALODA\fR
+Mērķa valodas kods. Noklusējums ir sistēmas LANG.
 .TP
-.BR \-\-service " " \fISERVICE\fR
-Translation service (default: lingva).
-Available: lingva, mymemory, libretranslate, deepl, deepl-free, google, openai, anthropic
+.BR \-\-service " " \fIPAKALPOJUMS\fR
+Tulkošanas pakalpojums (noklusējums: lingva).
+Pieejami: lingva, mymemory, libretranslate, deepl, deepl-free, google, openai, anthropic
 .TP
-.BR \-\-api\-key " " \fIKEY\fR
-API key for paid services (DeepL, Google, OpenAI, Anthropic).
+.BR \-\-api\-key " " \fIATSLĒGA\fR
+API atslēga maksas pakalpojumiem (DeepL, Google, OpenAI, Anthropic).
 .TP
-.BR \-\-model " " \fIMODEL\fR
-Model for AI services. Example: gpt-4o-mini, claude-3-haiku-20240307
+.BR \-\-model " " \fIMODELIS\fR
+Modelis AI pakalpojumiem. Piemērs: gpt-4o-mini, claude-3-haiku-20240307
 .TP
 .BR \-\-batch\-size " " \fIN\fR
-Entries per API call (default: 10).
+Ieraksti uz API izsaukumu (noklusējums: 10).
 .TP
 .BR \-\-dry\-run
-Preview changes without saving.
+Priekšskatīt izmaiņas nesaglabājot.
 .TP
 .BR \-\-no\-recursive
-Do not search subdirectories.
+Nemeklēt apakšdirektorijās.
 .SH PAKALPOJUMI
 .TP
 .B lingva
-Free, no API key required. Uses Lingva Translate instances.
+Bezmaksas, API atslēga nav nepieciešama. Izmanto Lingva Translate instances.
 .TP
 .B mymemory
-Free tier available. 1000 words/day without key.
+Bezmaksas līmenis pieejams. 1000 vārdi/dienā bez atslēgas.
 .TP
 .B libretranslate
-Self-hosted option available. Use \-\-url for custom instance.
+Pašmitināšanas opcija pieejama. Izmantojiet \-\-url pielāgotai instancei.
 .TP
 .B deepl, deepl-free
-High quality. Requires API key.
+Augsta kvalitāte. Nepieciešama API atslēga.
 .TP
 .B google
-Google Cloud Translation. Requires API key.
+Google Cloud Translation. Nepieciešama API atslēga.
 .TP
 .B openai
-GPT models with context awareness. Requires API key.
+GPT modeļi ar konteksta apzināšanos. Nepieciešama API atslēga.
 .TP
 .B anthropic
-Claude models with context awareness. Requires API key.
+Claude modeļi ar konteksta apzināšanos. Nepieciešama API atslēga.
 .SH IZEJAS STATUSS
 .TP
 .B 0
-Success.
+Veiksme.
 .TP
 .B 1
-Error occurred.
+Radās kļūda.
 .SH PIEMĒRI
 .TP
-Translate to system language (from LANG):
+Tulkot uz sistēmas valodu (no LANG):
 .B po-translate \-\-source en messages.po
 .TP
-Translate English to Swedish using free service:
+Tulkot angļu uz zviedru ar bezmaksas pakalpojumu:
 .B po-translate \-s en \-t sv locale/
 .TP
-Use DeepL with API key:
-.B po-translate \-s en \-t de \-\-service deepl \-\-api\-key KEY file.po
+Izmantot DeepL ar API atslēgu:
+.B po-translate \-s en \-t de \-\-service deepl \-\-api\-key ATSLĒGA file.po
 .TP
-Dry run with OpenAI:
+Testa palaišana ar OpenAI:
 .B po-translate \-s en \-t fr \-\-service openai \-\-dry\-run .
 .SH VIDE
 .TP
 .B LANG
-Used as default target language if \-\-target not specified.
+Tiek izmantota kā noklusējuma mērķa valoda, ja \-\-target nav norādīts.
 .TP
 .B OPENAI_API_KEY
-API key for OpenAI service.
+API atslēga OpenAI pakalpojumam.
 .TP
 .B ANTHROPIC_API_KEY
-API key for Anthropic service.
+API atslēga Anthropic pakalpojumam.
 .TP
 .B DEEPL_API_KEY
-API key for DeepL service.
+API atslēga DeepL pakalpojumam.
 .SH AUTORS
 Daniel Nylander <daniel@danielnylander.se>
 .SH SKATĪT ARĪ
@@ -106,4 +106,4 @@ Daniel Nylander <daniel@danielnylander.se>
 .BR msgfmt (1),
 .BR msginit (1)
 .SH KĻŪDAS
-Report bugs at: https://github.com/yeager/po-translate/issues
+Ziņot par kļūdām: https://github.com/yeager/po-translate/issues

@@ -1,103 +1,103 @@
-.TH PO-TRANSLATE 1 "February 2026" "po-translate 1.3.1" "User Commands"
+.TH PO-TRANSLATE 1 "Februarie 2026" "po-translate 1.3.1" "Gebruikersopdragte"
 .SH NAAM
-po-translate \- batch translate PO and TS localization files
-.SH SAMEVATTING
+po-translate \- bondel vertaal PO- en TS-lokaliseringslêers
+.SH SINOPSIS
 .B po-translate
-\fB\-\-source\fR \fILANG\fR [\fB\-\-target\fR \fILANG\fR] [\fIOPTIONS\fR] \fIPATH\fR...
+\fB\-\-source\fR \fITAAL\fR [\fB\-\-target\fR \fITAAL\fR] [\fIOPSIES\fR] \fIPAD\fR...
 .SH BESKRYWING
 .B po-translate
-automatically translates gettext .po and Qt .ts files using various
-translation services, both free and commercial.
+vertaal outomaties gettext .po- en Qt .ts-lêers met verskeie
+vertaaldienste, beide gratis en kommersieel.
 .PP
-If \fB\-\-target\fR is not specified, the target language is detected
-from the \fBLANG\fR environment variable.
+As \fB\-\-target\fR nie gespesifiseer is nie, word die doeltaal afgelei
+van die \fBLANG\fR-omgewingsveranderlike.
 .SH OPSIES
 .TP
 .BR \-h ", " \-\-help
-Show help message and exit.
+Wys hulpboodskap en verlaat.
 .TP
 .BR \-v ", " \-\-version
-Show version number and exit.
+Wys weergawenommer en verlaat.
 .TP
-.BR \-s ", " \-\-source " " \fILANG\fR
-Source language code (required). Example: en
+.BR \-s ", " \-\-source " " \fITAAL\fR
+Brontaalkode (vereis). Voorbeeld: en
 .TP
-.BR \-t ", " \-\-target " " \fILANG\fR
-Target language code. Defaults to system LANG.
+.BR \-t ", " \-\-target " " \fITAAL\fR
+Doeltaalkode. Verstek na stelsel LANG.
 .TP
-.BR \-\-service " " \fISERVICE\fR
-Translation service (default: lingva).
-Available: lingva, mymemory, libretranslate, deepl, deepl-free, google, openai, anthropic
+.BR \-\-service " " \fIDIENS\fR
+Vertaaldiens (verstek: lingva).
+Beskikbaar: lingva, mymemory, libretranslate, deepl, deepl-free, google, openai, anthropic
 .TP
-.BR \-\-api\-key " " \fIKEY\fR
-API key for paid services (DeepL, Google, OpenAI, Anthropic).
+.BR \-\-api\-key " " \fISLEUTEL\fR
+API-sleutel vir betaalde dienste (DeepL, Google, OpenAI, Anthropic).
 .TP
 .BR \-\-model " " \fIMODEL\fR
-Model for AI services. Example: gpt-4o-mini, claude-3-haiku-20240307
+Model vir KI-dienste. Voorbeeld: gpt-4o-mini, claude-3-haiku-20240307
 .TP
 .BR \-\-batch\-size " " \fIN\fR
-Entries per API call (default: 10).
+Inskrywings per API-oproep (verstek: 10).
 .TP
 .BR \-\-dry\-run
-Preview changes without saving.
+Voorskou veranderinge sonder om te stoor.
 .TP
 .BR \-\-no\-recursive
-Do not search subdirectories.
+Moenie subdossiëre deursoek nie.
 .SH DIENSTE
 .TP
 .B lingva
-Free, no API key required. Uses Lingva Translate instances.
+Gratis, geen API-sleutel vereis nie. Gebruik Lingva Translate-instansies.
 .TP
 .B mymemory
-Free tier available. 1000 words/day without key.
+Gratis vlak beskikbaar. 1000 woorde/dag sonder sleutel.
 .TP
 .B libretranslate
-Self-hosted option available. Use \-\-url for custom instance.
+Selfgehuisveste opsie beskikbaar. Gebruik \-\-url vir pasgemaakte instansie.
 .TP
 .B deepl, deepl-free
-High quality. Requires API key.
+Hoë kwaliteit. Vereis API-sleutel.
 .TP
 .B google
-Google Cloud Translation. Requires API key.
+Google Cloud Translation. Vereis API-sleutel.
 .TP
 .B openai
-GPT models with context awareness. Requires API key.
+GPT-modelle met konteksbewustheid. Vereis API-sleutel.
 .TP
 .B anthropic
-Claude models with context awareness. Requires API key.
+Claude-modelle met konteksbewustheid. Vereis API-sleutel.
 .SH UITGANGSTATUS
 .TP
 .B 0
-Success.
+Sukses.
 .TP
 .B 1
-Error occurred.
+Fout het voorgekom.
 .SH VOORBEELDE
 .TP
-Translate to system language (from LANG):
+Vertaal na stelseltaal (van LANG):
 .B po-translate \-\-source en messages.po
 .TP
-Translate English to Swedish using free service:
+Vertaal Engels na Sweeds met gratis diens:
 .B po-translate \-s en \-t sv locale/
 .TP
-Use DeepL with API key:
-.B po-translate \-s en \-t de \-\-service deepl \-\-api\-key KEY file.po
+Gebruik DeepL met API-sleutel:
+.B po-translate \-s en \-t de \-\-service deepl \-\-api\-key SLEUTEL file.po
 .TP
-Dry run with OpenAI:
+Droëloop met OpenAI:
 .B po-translate \-s en \-t fr \-\-service openai \-\-dry\-run .
 .SH OMGEWING
 .TP
 .B LANG
-Used as default target language if \-\-target not specified.
+Gebruik as verstekdoeltaal as \-\-target nie gespesifiseer is nie.
 .TP
 .B OPENAI_API_KEY
-API key for OpenAI service.
+API-sleutel vir OpenAI-diens.
 .TP
 .B ANTHROPIC_API_KEY
-API key for Anthropic service.
+API-sleutel vir Anthropic-diens.
 .TP
 .B DEEPL_API_KEY
-API key for DeepL service.
+API-sleutel vir DeepL-diens.
 .SH OUTEUR
 Daniel Nylander <daniel@danielnylander.se>
 .SH SIEN OOK
@@ -106,4 +106,4 @@ Daniel Nylander <daniel@danielnylander.se>
 .BR msgfmt (1),
 .BR msginit (1)
 .SH FOUTE
-Report bugs at: https://github.com/yeager/po-translate/issues
+Rapporteer foute by: https://github.com/yeager/po-translate/issues
