@@ -788,9 +788,22 @@ Services (API key required):
     parser.add_argument('--batch-size', type=int, default=10, help=_('Entries per API call (default: 10)'))
     parser.add_argument('--dry-run', action='store_true', help=_("Don't save changes"))
     parser.add_argument('--no-recursive', action='store_true', help=_("Don't search subdirectories"))
+    parser.add_argument('-V', '--verbose', action='store_true', help=_('Show detailed progress'))
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {__version__}')
     
     args = parser.parse_args()
+    
+    # Setup verbose printing
+    verbose = args.verbose
+    def vprint(msg):
+        if verbose:
+            print(msg, file=sys.stderr)
+    
+    vprint(_("🔧 po-translate {version} starting...").format(version=__version__))
+    vprint(_("   Source language: {lang}").format(lang=args.source))
+    vprint(_("   Service: {service}").format(service=args.service))
+    vprint(_("   Batch size: {size}").format(size=args.batch_size))
+    vprint(_("   Dry run: {dry}").format(dry=args.dry_run))
     
     # Default target language from LANG environment variable
     if not args.target:
@@ -816,12 +829,17 @@ Services (API key required):
         print(_("❌ Error: {error}").format(error=e), file=sys.stderr)
         sys.exit(1)
     
+    vprint(_("   Target language: {lang}").format(lang=args.target))
+    
     # Find files
+    vprint(_("📂 Scanning for files..."))
     files = find_files(args.paths, recursive=not args.no_recursive)
     
     if not files:
         print(_("❌ No .po or .ts files found"), file=sys.stderr)
         sys.exit(1)
+    
+    vprint(_("   Found {count} files to process").format(count=len(files)))
     
     print(_("🌐 po-translate - {source} → {target}").format(source=args.source, target=args.target))
     print(_("📦 Service: {service}").format(service=args.service))
@@ -832,10 +850,13 @@ Services (API key required):
     total_translated = 0
     total_entries = 0
     
-    for filepath in files:
+    for file_idx, filepath in enumerate(files, 1):
+        vprint(_("📄 [{current}/{total}] Processing: {file}").format(
+            current=file_idx, total=len(files), file=filepath))
         print(f"📄 {filepath}")
         
         try:
+            vprint(_("   Parsing file..."))
             result = translate_file(
                 filepath,
                 translator,
@@ -847,16 +868,28 @@ Services (API key required):
             
             if 'error' in result:
                 print(_("  ❌ {error}").format(error=result['error']))
+                vprint(_("   Error processing file"))
             else:
                 total_translated += result['translated']
                 total_entries += result['total']
+                vprint(_("   Translated {count} of {total} entries").format(
+                    count=result['translated'], total=result['total']))
                 
         except Exception as e:
             print(_("  ❌ Error: {error}").format(error=e), file=sys.stderr)
+            vprint(_("   Exception: {type}").format(type=type(e).__name__))
         
         print()
     
     # Summary
+    vprint("")
+    vprint(_("📊 Summary:"))
+    vprint(_("   Files processed: {count}").format(count=len(files)))
+    vprint(_("   Strings translated: {count}").format(count=total_translated))
+    vprint(_("   Total entries: {count}").format(count=total_entries))
+    vprint(_("   Service used: {service}").format(service=args.service))
+    vprint("")
+    
     print("=" * 40)
     print(_("✅ Done! Translated {count} strings").format(count=total_translated))
     print(_("   Total entries: {count}").format(count=total_entries))
