@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.1] - 2026-02-04
+
+### Changed
+- **Debian policy compliance**: Packages now follow Debian packaging guidelines
+  - Locale files installed to `/usr/share/po-translate/locale/`
+  - Added `/usr/share/doc/po-translate/copyright`
+  - Fixed locale lookup path in script
+
 ## [1.3.0] - 2026-02-04
 
 ### Added
