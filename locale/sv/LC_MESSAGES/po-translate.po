@@ -86,9 +86,8 @@ msgid "Source language code (e.g., en)"
 msgstr "Källspråkskod (t.ex. en)"
 
 #: po_translate.py:781
-#, fuzzy
 msgid "Target language code (e.g., sv, de, fr). Defaults to system LANG."
-msgstr "Målspråkskod (t.ex. sv, de, fr)"
+msgstr "Målspråkskod (t.ex. sv, de, fr). Standard från LANG-miljövariabel."
 
 #: po_translate.py:784
 msgid "Translation service (default: lingva)"
@@ -120,7 +119,7 @@ msgstr "Sök inte i underkataloger"
 
 #: po_translate.py:791
 msgid "Show detailed progress"
-msgstr ""
+msgstr "Visa detaljerad förlopp"
 
 #: po_translate.py:802
 #, fuzzy, python-brace-format
@@ -130,7 +129,7 @@ msgstr "🌐 po-translate - {source} → {target}"
 #: po_translate.py:803
 #, python-brace-format
 msgid "   Source language: {lang}"
-msgstr ""
+msgstr "   Källspråk: {lang}"
 
 #: po_translate.py:804
 #, fuzzy, python-brace-format
@@ -140,21 +139,21 @@ msgstr "📦 Tjänst: {service}"
 #: po_translate.py:805
 #, python-brace-format
 msgid "   Batch size: {size}"
-msgstr ""
+msgstr "   Batchstorlek: {size}"
 
 #: po_translate.py:806
 #, python-brace-format
 msgid "   Dry run: {dry}"
-msgstr ""
+msgstr "   Testkörning: {dry}"
 
 #: po_translate.py:815
 msgid "❌ Error: --target required (could not detect from LANG environment)"
-msgstr ""
+msgstr "❌ Fel: --target krävs (kunde inte detektera från LANG-miljövariabel)"
 
 #: po_translate.py:817
 #, python-brace-format
 msgid "ℹ️  Using target language from LANG: {lang}"
-msgstr ""
+msgstr "ℹ️  Använder målspråk från LANG: {lang}"
 
 #: po_translate.py:829
 #, python-brace-format
@@ -164,11 +163,11 @@ msgstr "❌ Fel: {error}"
 #: po_translate.py:832
 #, python-brace-format
 msgid "   Target language: {lang}"
-msgstr ""
+msgstr "   Målspråk: {lang}"
 
 #: po_translate.py:835
 msgid "📂 Scanning for files..."
-msgstr ""
+msgstr "📂 Söker efter filer..."
 
 #: po_translate.py:839
 msgid "❌ No .po or .ts files found"
@@ -177,7 +176,7 @@ msgstr "❌ Inga .po- eller .ts-filer hittades"
 #: po_translate.py:842
 #, python-brace-format
 msgid "   Found {count} files to process"
-msgstr ""
+msgstr "   Hittade {count} filer att bearbeta"
 
 #: po_translate.py:844
 #, python-brace-format
@@ -197,11 +196,11 @@ msgstr "📂 Filer: {count}"
 #: po_translate.py:854
 #, python-brace-format
 msgid "📄 [{current}/{total}] Processing: {file}"
-msgstr ""
+msgstr "📄 [{current}/{total}] Bearbetar: {file}"
 
 #: po_translate.py:859
 msgid "   Parsing file..."
-msgstr ""
+msgstr "   Tolkar fil..."
 
 #: po_translate.py:870
 #, python-brace-format
@@ -210,7 +209,7 @@ msgstr "  ❌ {error}"
 
 #: po_translate.py:871
 msgid "   Error processing file"
-msgstr ""
+msgstr "   Fel vid bearbetning av fil"
 
 #: po_translate.py:875
 #, fuzzy, python-brace-format
@@ -225,11 +224,11 @@ msgstr "  ❌ Fel: {error}"
 #: po_translate.py:880
 #, python-brace-format
 msgid "   Exception: {type}"
-msgstr ""
+msgstr "   Undantag: {type}"
 
 #: po_translate.py:886
 msgid "📊 Summary:"
-msgstr ""
+msgstr "📊 Sammanfattning:"
 
 #: po_translate.py:887
 #, fuzzy, python-brace-format
