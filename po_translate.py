@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 # Translation setup
 DOMAIN = "po-translate"
@@ -778,7 +778,7 @@ Services (API key required):
     
     parser.add_argument('paths', nargs='+', help=_('Files or directories to translate'))
     parser.add_argument('--source', '-s', required=True, help=_('Source language code (e.g., en)'))
-    parser.add_argument('--target', '-t', required=True, help=_('Target language code (e.g., sv, de, fr)'))
+    parser.add_argument('--target', '-t', help=_('Target language code (e.g., sv, de, fr). Defaults to system LANG.'))
     parser.add_argument('--service', default='lingva', 
                         choices=['lingva', 'mymemory', 'libretranslate', 'deepl', 'deepl-free', 'google', 'openai', 'anthropic'],
                         help=_('Translation service (default: lingva)'))
@@ -791,6 +791,17 @@ Services (API key required):
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {__version__}')
     
     args = parser.parse_args()
+    
+    # Default target language from LANG environment variable
+    if not args.target:
+        lang_env = os.environ.get('LANG', os.environ.get('LC_ALL', ''))
+        if lang_env:
+            # Extract language code from LANG (e.g., "sv_SE.UTF-8" -> "sv")
+            args.target = lang_env.split('_')[0].split('.')[0]
+        if not args.target or args.target == 'C' or args.target == 'POSIX':
+            print(_("❌ Error: --target required (could not detect from LANG environment)"), file=sys.stderr)
+            sys.exit(1)
+        print(_("ℹ️  Using target language from LANG: {lang}").format(lang=args.target))
     
     # Get translator
     config = {
