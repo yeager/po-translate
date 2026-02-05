@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.4.0] - 2026-02-05
+
+### Added
+- **Enhanced verbose mode** (`-V/--verbose`):
+  - Per-batch timing with chars/second speed
+  - Source/target character count tracking
+  - Total API time vs total elapsed time
+  - File parsing time
+  - Average translation speed summary
+- `translate_file()` now returns detailed stats (chars_source, chars_target, api_time)
+
+## [1.3.4] - 2026-02-04
+
+### Fixed
+- Minor bug fixes
+
 ## [1.3.3] - 2026-02-04
 
 ### Added

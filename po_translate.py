@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-__version__ = "1.3.4"
+__version__ = "1.4.0"
 
 # Translation setup
 DOMAIN = "po-translate"
@@ -671,42 +671,69 @@ def get_translator(service: str, config: dict) -> Translator:
 
 
 def translate_file(filepath: str, translator: Translator, source_lang: str, target_lang: str, 
-                   batch_size: int = 10, dry_run: bool = False) -> dict:
+                   batch_size: int = 10, dry_run: bool = False, verbose: bool = False) -> dict:
     """Translate a single file."""
     ext = Path(filepath).suffix.lower()
+    file_start = time.time()
+    
+    def vprint(msg):
+        if verbose:
+            print(msg, file=sys.stderr)
     
     # Parse file
+    parse_start = time.time()
     if ext == '.po':
         po_file = POFile(filepath)
     elif ext == '.ts':
         po_file = TSFile(filepath)
     else:
         return {'error': f'Unsupported format: {ext}'}
+    parse_elapsed = time.time() - parse_start
+    vprint(_("   Parsed in {elapsed:.3f}s").format(elapsed=parse_elapsed))
     
     # Get untranslated entries
     untranslated = po_file.get_untranslated()
     
     if not untranslated:
-        return {'translated': 0, 'total': len(po_file.entries)}
+        return {'translated': 0, 'total': len(po_file.entries), 'chars_source': 0, 'chars_target': 0}
     
     print(f"  📝 {len(untranslated)} strings to translate...")
+    vprint(_("   Total entries in file: {count}").format(count=len(po_file.entries)))
     
     # Translate in batches
     translated_count = 0
+    total_chars_source = 0
+    total_chars_target = 0
+    total_api_time = 0
+    num_batches = (len(untranslated) + batch_size - 1) // batch_size
     
     for i in range(0, len(untranslated), batch_size):
         batch = untranslated[i:i + batch_size]
         texts = [e.msgid for e in batch]
+        batch_chars = sum(len(t) for t in texts)
+        total_chars_source += batch_chars
+        batch_num = i // batch_size + 1
         
-        print(f"  🔄 Batch {i//batch_size + 1}/{(len(untranslated) + batch_size - 1)//batch_size}...", end=' ', flush=True)
+        print(f"  🔄 Batch {batch_num}/{num_batches}...", end=' ', flush=True)
+        vprint("")
+        vprint(_("       Strings: {count}, chars: {chars}").format(count=len(batch), chars=batch_chars))
         
+        api_start = time.time()
         translations = translator.translate_batch(texts, source_lang, target_lang)
+        api_elapsed = time.time() - api_start
+        total_api_time += api_elapsed
+        
+        trans_chars = sum(len(t) for t in translations)
+        total_chars_target += trans_chars
         
         for entry, translation in zip(batch, translations):
             entry.msgstr = translation
             translated_count += 1
         
+        chars_per_sec = batch_chars / api_elapsed if api_elapsed > 0 else 0
         print(f"✓")
+        vprint(_("       API response: {elapsed:.2f}s ({speed:.0f} chars/s)").format(
+            elapsed=api_elapsed, speed=chars_per_sec))
         
         # Rate limiting between batches
         if i + batch_size < len(untranslated):
@@ -719,10 +746,20 @@ def translate_file(filepath: str, translator: Translator, source_lang: str, targ
     else:
         print(f"  🔍 Dry run: would save {filepath}")
     
+    file_elapsed = time.time() - file_start
+    vprint(_("   File completed in {elapsed:.2f}s (API time: {api:.2f}s)").format(
+        elapsed=file_elapsed, api=total_api_time))
+    vprint(_("   Characters: {source} source → {target} target").format(
+        source=total_chars_source, target=total_chars_target))
+    
     return {
         'translated': translated_count,
         'total': len(po_file.entries),
-        'filepath': filepath
+        'filepath': filepath,
+        'chars_source': total_chars_source,
+        'chars_target': total_chars_target,
+        'api_time': total_api_time,
+        'elapsed': file_elapsed
     }
 
 
@@ -865,6 +902,10 @@ Services (API key required):
     # Translate files
     total_translated = 0
     total_entries = 0
+    total_chars_source = 0
+    total_chars_target = 0
+    total_api_time = 0
+    start_time = time.time()
     
     for file_idx, filepath in enumerate(files, 1):
         vprint(_("📄 [{current}/{total}] Processing: {file}").format(
@@ -872,14 +913,14 @@ Services (API key required):
         print(f"📄 {filepath}")
         
         try:
-            vprint(_("   Parsing file..."))
             result = translate_file(
                 filepath,
                 translator,
                 args.source,
                 args.target,
                 batch_size=args.batch_size,
-                dry_run=args.dry_run
+                dry_run=args.dry_run,
+                verbose=verbose
             )
             
             if 'error' in result:
@@ -888,6 +929,9 @@ Services (API key required):
             else:
                 total_translated += result['translated']
                 total_entries += result['total']
+                total_chars_source += result.get('chars_source', 0)
+                total_chars_target += result.get('chars_target', 0)
+                total_api_time += result.get('api_time', 0)
                 vprint(_("   Translated {count} of {total} entries").format(
                     count=result['translated'], total=result['total']))
                 
@@ -897,13 +941,22 @@ Services (API key required):
         
         print()
     
+    total_elapsed = time.time() - start_time
+    
     # Summary
     vprint("")
     vprint(_("📊 Summary:"))
     vprint(_("   Files processed: {count}").format(count=len(files)))
     vprint(_("   Strings translated: {count}").format(count=total_translated))
     vprint(_("   Total entries: {count}").format(count=total_entries))
+    vprint(_("   Characters: {source} source → {target} target").format(
+        source=total_chars_source, target=total_chars_target))
     vprint(_("   Service used: {service}").format(service=args.service))
+    vprint(_("   Total API time: {time:.2f}s").format(time=total_api_time))
+    vprint(_("   Total elapsed time: {time:.2f}s").format(time=total_elapsed))
+    if total_chars_source > 0 and total_api_time > 0:
+        vprint(_("   Average speed: {speed:.0f} chars/s").format(
+            speed=total_chars_source / total_api_time))
     vprint("")
     
     print("=" * 40)
