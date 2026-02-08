@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="console-application">
+  <id>io.github.yeager.po-translate</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>po-translate</name>
+  <summary>Batch translate .po and .ts localization files using AI or free services</summary>
+
+  <developer id="io.github.yeager">
+    <name>Daniel Nylander</name>
+  </developer>
+
+  <description>
+    <p>
+      po-translate is a command-line tool for batch translating .po and .ts
+      localization files. It supports multiple translation backends including
+      AI services and free translation APIs, making it easy to bootstrap
+      translations for your software projects.
+    </p>
+  </description>
+
+  <provides>
+    <binary>po-translate</binary>
+  </provides>
+
+  <categories>
+    <category>Development</category>
+    <category>Translation</category>
+  </categories>
+
+  <keywords>
+    <keyword>translation</keyword>
+    <keyword>localization</keyword>
+    <keyword>i18n</keyword>
+    <keyword>l10n</keyword>
+    <keyword>gettext</keyword>
+    <keyword>PO</keyword>
+    <keyword>TS</keyword>
+  </keywords>
+
+  <url type="homepage">https://github.com/yeager/po-translate</url>
+  <url type="bugtracker">https://github.com/yeager/po-translate/issues</url>
+  <url type="vcs-browser">https://github.com/yeager/po-translate</url>
+
+  <releases>
+    <release version="1.2.0" date="2026-02-03" />
+    <release version="1.1.0" />
+    <release version="1.0.0" />
+  </releases>
+
+  <content_rating type="oars-1.1" />
+</component>

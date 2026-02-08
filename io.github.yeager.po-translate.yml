@@ -1,0 +1,28 @@
+app-id: io.github.yeager.po-translate
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: po-translate
+
+finish-args:
+  - --share=network
+  - --filesystem=host
+
+modules:
+  - name: python3-polib
+    buildsystem: simple
+    build-commands:
+      - pip3 install --no-index --find-links=. --prefix=/app polib
+    sources:
+      - type: pypi
+        name: polib
+
+  - name: po-translate
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 po_translate.py /app/bin/po-translate
+      - install -Dm644 io.github.yeager.po-translate.metainfo.xml /app/share/metainfo/io.github.yeager.po-translate.metainfo.xml
+    sources:
+      - type: git
+        url: https://github.com/yeager/po-translate.git
+        tag: v1.2.0
