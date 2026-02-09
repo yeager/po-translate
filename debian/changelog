@@ -1,0 +1,6 @@
+po-translate (1.4.0) stable; urgency=medium
+
+  * Updated translation engine support
+  * Bug fixes and improvements
+
+ -- Daniel Nylander <daniel@danielnylander.se>  Mon, 09 Feb 2026 15:00:00 +0100
