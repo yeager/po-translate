@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "po-translate"
+version = "1.4.0"
+description = "Batch translate .po and .ts files using AI"
+license = "GPL-3.0-or-later"
+authors = [
+    {name = "Daniel Nylander", email = "daniel@danielnylander.se"},
+]
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Localization",
+    "Environment :: Console",
+]
+
+[project.scripts]
+po-translate = "po_translate:main"
+
+[project.urls]
+Homepage = "https://github.com/yeager/po-translate"
+
+[tool.setuptools]
+py-modules = ["po_translate"]
+
+[tool.setuptools.package-data]
+"*" = ["locale/**/*", "man/**/*"]
