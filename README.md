@@ -47,6 +47,12 @@ tar xzf po-translate-1.5.0.tar.gz -C /usr/local
 
 Download [po-translate-1.5.0.zip](https://github.com/yeager/po-translate/releases/download/v1.5.0/po-translate-1.5.0.zip), extract, and add to PATH.
 
+### PyPI
+
+```bash
+pip install po-translate-ai
+```
+
 ### From source
 
 ```bash

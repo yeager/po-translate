@@ -3,7 +3,7 @@ requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "po-translate"
+name = "po-translate-ai"
 version = "1.5.0"
 description = "Batch translate .po and .ts files using AI"
 license = "GPL-3.0-or-later"
