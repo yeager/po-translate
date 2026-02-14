@@ -1,5 +1,5 @@
 Name:           po-translate
-Version:        1.4.0
+Version:        1.5.0
 Release:        1%{?dist}
 Summary:        Batch translate PO and TS localization files
 License:        GPL-3.0-or-later

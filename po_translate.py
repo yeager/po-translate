@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
 
 # Simple passthrough (i18n removed)
 def _(s): return s
@@ -233,6 +233,76 @@ class TSFile:
                             del translation_elem.attrib['type']
         
         self.tree.write(filepath, encoding='utf-8', xml_declaration=True)
+
+
+class XLIFFFile:
+    """Parse and write XLIFF (.xliff/.xlf) files."""
+
+    # XLIFF 1.2 namespace
+    NS = {'x': 'urn:oasis:names:tc:xliff:document:1.2'}
+
+    def __init__(self, filepath: str):
+        self.filepath = filepath
+        self.entries: list[TranslationEntry] = []
+        self.root = None
+        self._parse()
+
+    def _parse(self):
+        import xml.etree.ElementTree as ET
+
+        self.tree = ET.parse(self.filepath)
+        self.root = self.tree.getroot()
+
+        # Detect namespace from root tag
+        ns = ''
+        if self.root.tag.startswith('{'):
+            ns = self.root.tag.split('}')[0] + '}'
+
+        for tu in self.root.iter(f'{ns}trans-unit'):
+            source_elem = tu.find(f'{ns}source')
+            target_elem = tu.find(f'{ns}target')
+
+            source = source_elem.text or '' if source_elem is not None else ''
+            target = target_elem.text or '' if target_elem is not None else ''
+
+            entry = TranslationEntry(
+                msgid=source,
+                msgstr=target,
+                msgctxt=tu.get('id', ''),
+            )
+            entry._tu_elem = tu
+            entry._ns = ns
+            self.entries.append(entry)
+
+    def get_untranslated(self) -> list[TranslationEntry]:
+        return [e for e in self.entries if e.needs_translation]
+
+    def save(self, filepath: str = None):
+        filepath = filepath or self.filepath
+
+        for entry in self.entries:
+            if hasattr(entry, '_tu_elem'):
+                ns = entry._ns
+                target_elem = entry._tu_elem.find(f'{ns}target')
+                if target_elem is None:
+                    import xml.etree.ElementTree as ET
+                    target_elem = ET.SubElement(entry._tu_elem, f'{ns}target')
+                target_elem.text = entry.msgstr
+
+        self.tree.write(filepath, encoding='utf-8', xml_declaration=True)
+
+
+def load_glossary(filepath: str) -> dict:
+    """Load a glossary CSV file (source,target per line). Returns dict."""
+    import csv
+    glossary = {}
+    with open(filepath, 'r', encoding='utf-8') as f:
+        reader = csv.reader(f)
+        header = next(reader, None)  # skip header
+        for row in reader:
+            if len(row) >= 2:
+                glossary[row[0].strip()] = row[1].strip()
+    return glossary
 
 
 class Translator:
@@ -645,7 +715,8 @@ def get_translator(service: str, config: dict) -> Translator:
 
 
 def translate_file(filepath: str, translator: Translator, source_lang: str, target_lang: str, 
-                   batch_size: int = 10, dry_run: bool = False, verbose: bool = False) -> dict:
+                   batch_size: int = 10, dry_run: bool = False, verbose: bool = False,
+                   glossary: dict = None) -> dict:
     """Translate a single file."""
     ext = Path(filepath).suffix.lower()
     file_start = time.time()
@@ -660,6 +731,8 @@ def translate_file(filepath: str, translator: Translator, source_lang: str, targ
         po_file = POFile(filepath)
     elif ext == '.ts':
         po_file = TSFile(filepath)
+    elif ext in ('.xliff', '.xlf'):
+        po_file = XLIFFFile(filepath)
     else:
         return {'error': f'Unsupported format: {ext}'}
     parse_elapsed = time.time() - parse_start
@@ -680,6 +753,13 @@ def translate_file(filepath: str, translator: Translator, source_lang: str, targ
     total_chars_target = 0
     total_api_time = 0
     num_batches = (len(untranslated) + batch_size - 1) // batch_size
+
+    # Optional progress bar
+    try:
+        from tqdm import tqdm
+        _progress = tqdm(total=len(untranslated), desc="  Translating", unit="str", leave=False)
+    except ImportError:
+        _progress = None
     
     for i in range(0, len(untranslated), batch_size):
         batch = untranslated[i:i + batch_size]
@@ -701,10 +781,18 @@ def translate_file(filepath: str, translator: Translator, source_lang: str, targ
         total_chars_target += trans_chars
         
         for entry, translation in zip(batch, translations):
+            # Apply glossary post-processing
+            if glossary:
+                for src_term, tgt_term in glossary.items():
+                    translation = re.sub(
+                        re.escape(src_term), tgt_term, translation, flags=re.IGNORECASE
+                    )
             entry.msgstr = translation
             translated_count += 1
         
         chars_per_sec = batch_chars / api_elapsed if api_elapsed > 0 else 0
+        if _progress:
+            _progress.update(len(batch))
         print(f"✓")
         vprint(_("       API response: {elapsed:.2f}s ({speed:.0f} chars/s)").format(
             elapsed=api_elapsed, speed=chars_per_sec))
@@ -713,6 +801,9 @@ def translate_file(filepath: str, translator: Translator, source_lang: str, targ
         if i + batch_size < len(untranslated):
             time.sleep(0.5)
     
+    if _progress:
+        _progress.close()
+
     # Save file
     if not dry_run:
         po_file.save()
@@ -745,11 +836,11 @@ def find_files(paths: list[str], recursive: bool = True) -> list[str]:
         path = Path(path)
         
         if path.is_file():
-            if path.suffix.lower() in ('.po', '.ts'):
+            if path.suffix.lower() in ('.po', '.ts', '.xliff', '.xlf'):
                 files.append(str(path))
         elif path.is_dir():
             pattern = '**/*' if recursive else '*'
-            for ext in ('.po', '.ts'):
+            for ext in ('.po', '.ts', '.xliff', '.xlf'):
                 files.extend(str(f) for f in path.glob(f'{pattern}{ext}'))
     
     return files
@@ -811,6 +902,7 @@ Services (API key required):
     parser.add_argument('--url', help=_('Custom URL for LibreTranslate'))
     parser.add_argument('--model', help=_('Model for AI services (e.g., gpt-4o-mini, claude-3-haiku-20240307)'))
     parser.add_argument('--batch-size', type=int, default=10, help=_('Entries per API call (default: 10)'))
+    parser.add_argument('--glossary', help=_('CSV glossary file (source,target per line) for custom terms'))
     parser.add_argument('--dry-run', action='store_true', help=_("Don't save changes"))
     parser.add_argument('--no-recursive', action='store_true', help=_("Don't search subdirectories"))
     parser.add_argument('-V', '--verbose', action='store_true', help=_('Show detailed progress'))
@@ -863,10 +955,16 @@ Services (API key required):
     files = find_files(args.paths, recursive=not args.no_recursive)
     
     if not files:
-        print(_("❌ No .po or .ts files found"), file=sys.stderr)
+        print(_("❌ No .po, .ts, or .xliff files found"), file=sys.stderr)
         sys.exit(1)
     
     vprint(_("   Found {count} files to process").format(count=len(files)))
+    
+    # Load glossary
+    _glossary = None
+    if getattr(args, 'glossary', None):
+        _glossary = load_glossary(args.glossary)
+        vprint(_("   Loaded glossary: {count} terms").format(count=len(_glossary)))
     
     print(_("🌐 po-translate - {source} → {target}").format(source=args.source, target=args.target))
     print(_("📦 Service: {service}").format(service=args.service))
@@ -894,7 +992,8 @@ Services (API key required):
                 args.target,
                 batch_size=args.batch_size,
                 dry_run=args.dry_run,
-                verbose=verbose
+                verbose=verbose,
+                glossary=_glossary
             )
             
             if 'error' in result:

@@ -6,7 +6,9 @@
 
 - **8 translation services** – Free and paid options
 - **Batch translation** – Efficient API usage
-- **Format support** – gettext `.po` and Qt `.ts` files
+- **Format support** – gettext `.po`, Qt `.ts`, and OASIS `.xliff`/`.xlf` files
+- **Glossary** – Custom term lists via `--glossary`
+- **Progress bar** – Optional tqdm progress for large files
 - **Preserves placeholders** – Keeps `{0}`, `%s`, `%d` intact
 - **Dry run mode** – Preview changes before saving
 - **LANG auto-detection** – Defaults target language from system locale
@@ -16,34 +18,34 @@
 ### Debian/Ubuntu
 
 ```bash
-wget https://github.com/yeager/po-translate/releases/download/v1.4.0/po-translate_1.4.0_all.deb
-sudo dpkg -i po-translate_1.4.0_all.deb
+wget https://github.com/yeager/po-translate/releases/download/v1.5.0/po-translate_1.5.0_all.deb
+sudo dpkg -i po-translate_1.5.0_all.deb
 ```
 
 ### Fedora/RHEL/openSUSE
 
 ```bash
-wget https://github.com/yeager/po-translate/releases/download/v1.4.0/po-translate-1.4.0-1.noarch.rpm
-sudo rpm -i po-translate-1.4.0-1.noarch.rpm
+wget https://github.com/yeager/po-translate/releases/download/v1.5.0/po-translate-1.5.0-1.noarch.rpm
+sudo rpm -i po-translate-1.5.0-1.noarch.rpm
 ```
 
 ### Arch Linux
 
 ```bash
-wget https://github.com/yeager/po-translate/releases/download/v1.4.0/po-translate-1.4.0.pkg.tar.zst
-sudo pacman -U po-translate-1.4.0.pkg.tar.zst
+wget https://github.com/yeager/po-translate/releases/download/v1.5.0/po-translate-1.5.0.pkg.tar.zst
+sudo pacman -U po-translate-1.5.0.pkg.tar.zst
 ```
 
 ### Universal (tar.gz)
 
 ```bash
-wget https://github.com/yeager/po-translate/releases/download/v1.4.0/po-translate-1.4.0.tar.gz
-tar xzf po-translate-1.4.0.tar.gz -C /usr/local
+wget https://github.com/yeager/po-translate/releases/download/v1.5.0/po-translate-1.5.0.tar.gz
+tar xzf po-translate-1.5.0.tar.gz -C /usr/local
 ```
 
 ### Windows/macOS (zip)
 
-Download [po-translate-1.4.0.zip](https://github.com/yeager/po-translate/releases/download/v1.4.0/po-translate-1.4.0.zip), extract, and add to PATH.
+Download [po-translate-1.5.0.zip](https://github.com/yeager/po-translate/releases/download/v1.5.0/po-translate-1.5.0.zip), extract, and add to PATH.
 
 ### From source
 
@@ -99,6 +101,7 @@ po-translate --service anthropic --api-key sk-ant-xxx --source en --target ko ./
 | `--url` | Custom URL for LibreTranslate |
 | `--model` | Model for AI services |
 | `--batch-size` | Entries per API call (default: 10) |
+| `--glossary` | CSV glossary file for custom terms |
 | `--dry-run` | Preview without saving |
 | `--no-recursive` | Don't search subdirectories |
 

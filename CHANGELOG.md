@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.5.0] - 2026-02-14
+
+### Added
+- **XLIFF support** – Parse and translate `.xliff` and `.xlf` files (OASIS XLIFF 1.2)
+- **Glossary** – New `--glossary` flag for custom term CSV files (source,target per line)
+- **Progress bar** – Optional tqdm progress bar for large files (install `tqdm` to enable)
+- **Test suite** – pytest-based tests for PO/TS/XLIFF parsing, placeholders, batch logic
+- **GitHub Actions CI** – Lint (ruff) + test + automatic release on tag push
+
+### Removed
+- Removed i18n/gettext infrastructure and translated man pages (simplifies codebase)
+- Removed old dist files from repository
+
+### Changed
+- Installation links in README updated to v1.5.0
+- Build scripts cleaned up (no more locale packaging)
+
 ## [1.4.0] - 2026-02-05
 
 ### Added
