@@ -915,12 +915,12 @@ Services (API key required):
     
     if args.about:
         print(f"po-translate {__version__}")
-        print(f"Batch translate .po and .ts files using AI")
+        print("Batch translate .po and .ts files using AI")
         print()
-        print(f"Author:  Daniel Nylander <daniel@danielnylander.se>")
-        print(f"License: GPL-3.0-or-later")
-        print(f"Website: https://github.com/yeager/po-translate")
-        print(f"PyPI:    https://pypi.org/project/po-translate-ai/")
+        print("Author:  Daniel Nylander <daniel@danielnylander.se>")
+        print("License: GPL-3.0-or-later")
+        print("Website: https://github.com/yeager/po-translate")
+        print("PyPI:    https://pypi.org/project/po-translate-ai/")
         sys.exit(0)
     
     args = parser.parse_args()
