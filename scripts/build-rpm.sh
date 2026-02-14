@@ -12,7 +12,6 @@ echo "Building ${PKG}-${VER} RPM on server..."
 TMPDIR=$(mktemp -d)
 mkdir -p "$TMPDIR/${PKG}-${VER}"
 cp "$SRCDIR/po_translate.py" "$SRCDIR/po-translate.1" "$TMPDIR/${PKG}-${VER}/"
-cp -r "$SRCDIR/locale" "$TMPDIR/${PKG}-${VER}/"
 cp "$SRCDIR/README.md" "$SRCDIR/CHANGELOG.md" "$SRCDIR/LICENSE" "$TMPDIR/${PKG}-${VER}/"
 mkdir -p "$TMPDIR/${PKG}-${VER}/man"
 gzip -9cn "$SRCDIR/po-translate.1" > "$TMPDIR/${PKG}-${VER}/man/po-translate.1.gz"

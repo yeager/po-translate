@@ -28,4 +28,4 @@ Homepage = "https://github.com/yeager/po-translate"
 py-modules = ["po_translate"]
 
 [tool.setuptools.package-data]
-"*" = ["locale/**/*", "man/**/*"]
+"*" = []

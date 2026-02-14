@@ -35,11 +35,6 @@ install -m 755 "$SRCDIR/debian/prerm" "$DEST/DEBIAN/prerm"
 # Binary
 install -m 755 "$SRCDIR/po_translate.py" "$DEST/usr/bin/po-translate"
 
-# Locales
-if [ -d "$SRCDIR/locale" ]; then
-    cp -r "$SRCDIR/locale" "$DEST/usr/share/"
-fi
-
 # Copyright
 install -m 644 "$SRCDIR/debian/copyright" "$DEST/usr/share/doc/$PKG/copyright"
 

@@ -14,7 +14,6 @@ Supports:
 """
 
 import argparse
-import gettext
 import json
 import locale
 import os
@@ -29,33 +28,8 @@ from typing import Optional
 
 __version__ = "1.4.0"
 
-# Translation setup
-DOMAIN = "po-translate"
-
-# Look for locale in multiple places
-_possible_locale_dirs = [
-    Path("/usr/share/po-translate/locale"),  # System install (Debian)
-    Path(__file__).parent / "locale",  # Development
-]
-LOCALE_DIR = None
-for _dir in _possible_locale_dirs:
-    # Check it's a real locale dir (has LC_MESSAGES subdir or .pot file)
-    if _dir.is_dir() and (list(_dir.glob("*/LC_MESSAGES")) or list(_dir.glob("*.pot"))):
-        LOCALE_DIR = _dir
-        break
-
-# Initialize gettext - detect language
-_system_lang = locale.getlocale()[0] or os.environ.get("LANG", "en")
-_lang_code = _system_lang.split("_")[0].split(".")[0] if _system_lang else "en"
-
-try:
-    if LOCALE_DIR:
-        translation = gettext.translation(DOMAIN, LOCALE_DIR, languages=[_lang_code], fallback=True)
-    else:
-        translation = gettext.NullTranslations()
-    _ = translation.gettext
-except Exception:
-    def _(s): return s
+# Simple passthrough (i18n removed)
+def _(s): return s
 
 
 @dataclass

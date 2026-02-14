@@ -23,10 +23,6 @@ install -m 755 po_translate.py %{buildroot}/usr/bin/po-translate
 mkdir -p %{buildroot}/usr/share/man/man1
 install -m 644 man/po-translate.1.gz %{buildroot}/usr/share/man/man1/
 
-if [ -d locale ]; then
-    cp -r locale %{buildroot}/usr/share/
-fi
-
 mkdir -p %{buildroot}/usr/share/doc/%{name}
 install -m 644 README.md CHANGELOG.md %{buildroot}/usr/share/doc/%{name}/
 
@@ -39,7 +35,6 @@ install -m 644 README.md CHANGELOG.md %{buildroot}/usr/share/doc/%{name}/
 %files
 /usr/bin/po-translate
 /usr/share/man/man1/po-translate.1.gz
-/usr/share/locale/
 %doc /usr/share/doc/%{name}/README.md
 %doc /usr/share/doc/%{name}/CHANGELOG.md
 %license LICENSE
