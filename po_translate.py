@@ -909,6 +909,19 @@ Services (API key required):
     parser.add_argument('-h', '--help', action='help', help=_('Show this help message and exit'))
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {__version__}',
                         help=_('Show version number and exit'))
+    parser.add_argument('--about', action='store_true', help=_('Show application info and exit'))
+    
+    args, remaining = parser.parse_known_args()
+    
+    if args.about:
+        print(f"po-translate {__version__}")
+        print(f"Batch translate .po and .ts files using AI")
+        print()
+        print(f"Author:  Daniel Nylander <daniel@danielnylander.se>")
+        print(f"License: GPL-3.0-or-later")
+        print(f"Website: https://github.com/yeager/po-translate")
+        print(f"PyPI:    https://pypi.org/project/po-translate-ai/")
+        sys.exit(0)
     
     args = parser.parse_args()
     
