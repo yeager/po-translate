@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-__version__ = "1.5.0"
+__version__ = "1.5.1"
 
 # Simple passthrough (i18n removed)
 def _(s): return s
@@ -905,6 +905,8 @@ Services (API key required):
     parser.add_argument('--glossary', help=_('CSV glossary file (source,target per line) for custom terms'))
     parser.add_argument('--dry-run', action='store_true', help=_("Don't save changes"))
     parser.add_argument('--no-recursive', action='store_true', help=_("Don't search subdirectories"))
+    parser.add_argument('-j', '--json', action='store_true', help=_('JSON output'))
+    parser.add_argument('-q', '--quiet', action='store_true', help=_('Suppress non-essential output (only errors)'))
     parser.add_argument('-V', '--verbose', action='store_true', help=_('Show detailed progress'))
     parser.add_argument('-h', '--help', action='help', help=_('Show this help message and exit'))
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {__version__}',
@@ -980,10 +982,11 @@ Services (API key required):
         _glossary = load_glossary(args.glossary)
         vprint(_("   Loaded glossary: {count} terms").format(count=len(_glossary)))
     
-    print(_("🌐 po-translate - {source} → {target}").format(source=args.source, target=args.target))
-    print(_("📦 Service: {service}").format(service=args.service))
-    print(_("📂 Files: {count}").format(count=len(files)))
-    print()
+    if not args.quiet and not args.json:
+        print(_("🌐 po-translate - {source} → {target}").format(source=args.source, target=args.target))
+        print(_("📦 Service: {service}").format(service=args.service))
+        print(_("📂 Files: {count}").format(count=len(files)))
+        print()
     
     # Translate files
     total_translated = 0
@@ -1046,12 +1049,30 @@ Services (API key required):
             speed=total_chars_source / total_api_time))
     vprint("")
     
-    print("=" * 40)
-    print(_("✅ Done! Translated {count} strings").format(count=total_translated))
-    print(_("   Total entries: {count}").format(count=total_entries))
+    if args.json:
+        import json as _json
+        summary = {
+            "files_processed": len(files),
+            "strings_translated": total_translated,
+            "total_entries": total_entries,
+            "chars_source": total_chars_source,
+            "chars_target": total_chars_target,
+            "service": args.service,
+            "source_lang": args.source,
+            "target_lang": args.target,
+            "dry_run": args.dry_run,
+            "elapsed_seconds": round(total_elapsed, 2),
+        }
+        print(_json.dumps(summary, indent=2, ensure_ascii=False))
+    elif not args.quiet:
+        print("=" * 40)
+        print(_("✅ Done! Translated {count} strings").format(count=total_translated))
+        print(_("   Total entries: {count}").format(count=total_entries))
+        
+        if args.dry_run:
+            print(_("   (dry run - no files modified)"))
     
-    if args.dry_run:
-        print(_("   (dry run - no files modified)"))
+    sys.exit(0)
 
 
 if __name__ == '__main__':
