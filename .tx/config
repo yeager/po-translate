@@ -1,7 +1,7 @@
 [main]
 host = https://www.transifex.com
 
-[o:danielnylander:p:po-translate:r:po-translate-pot]
+[o:danielnylander:p:po-translate-ai:r:po-translate-pot]
 file_filter  = po/<lang>.po
 source_file  = po/po-translate.pot
 source_lang  = en
