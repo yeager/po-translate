@@ -1,0 +1,72 @@
+.TH PO-TRANSLATE 1 "2026-02-15" "Daniel Nylander" "po-translate Manual"
+.SH NAME
+po-translate - Batch translate PO and TS files using AI
+.SH SYNOPSIS
+.B po-translate
+.RI [ OPTIONS ]
+.I PATHS...
+.SH DESCRIPTION
+\fBpo-translate\fR batch translates .po, .ts, and .xliff localization files using AI or free translation services. It supports 8 translation backends (Lingva, MyMemory, LibreTranslate, DeepL, Google, OpenAI, Anthropic), custom glossaries, placeholder preservation, and dry-run mode.
+.SH OPTIONS
+.TP
+.I PATHS
+Files or directories to translate.
+.TP
+.BR \-s ", " \-\-source " " \fILANG\fR
+Source language code (e.g., en). Required.
+.TP
+.BR \-t ", " \-\-target " " \fILANG\fR
+Target language code (e.g., sv). Defaults to system LANG.
+.TP
+.BR \-\-service " " \fISERVICE\fR
+Translation service: lingva, mymemory, libretranslate, deepl, deepl-free, google, openai, anthropic (default: lingva).
+.TP
+.BR \-\-api\-key " " \fIKEY\fR
+API key for paid services.
+.TP
+.BR \-\-url " " \fIURL\fR
+Custom URL for LibreTranslate.
+.TP
+.BR \-\-model " " \fIMODEL\fR
+Model for AI services (e.g., gpt-4o-mini, claude-3-haiku-20240307).
+.TP
+.BR \-\-batch\-size " " \fIN\fR
+Entries per API call (default: 10).
+.TP
+.BR \-\-glossary " " \fIFILE\fR
+CSV glossary file (source,target per line) for custom terms.
+.TP
+.B \-\-dry\-run
+Do not save changes.
+.TP
+.B \-\-no\-recursive
+Do not search subdirectories.
+.TP
+.BR \-V ", " \-\-verbose
+Show detailed progress.
+.TP
+.BR \-v ", " \-\-version
+Show version number and exit.
+.TP
+.B \-\-about
+Show application info and exit.
+.SH EXAMPLES
+.nf
+po-translate -s en -t sv messages.po
+po-translate -s en --service deepl --api-key KEY translations/
+po-translate -s en -t de --service openai --model gpt-4o-mini *.po
+po-translate -s en --glossary terms.csv --dry-run project/
+.fi
+.SH FILES
+.TP
+.I ~/.config/po-translate/
+Configuration files.
+.TP
+.I ~/.cache/po-translate/
+Cached data.
+.SH BUGS
+Report bugs at https://github.com/yeager/po-translate/issues
+.SH AUTHOR
+Daniel Nylander <daniel@danielnylander.se>
+.SH SEE ALSO
+Project homepage: https://github.com/yeager/po-translate
