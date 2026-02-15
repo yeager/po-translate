@@ -6,3 +6,9 @@ file_filter  = po/<lang>.po
 source_file  = po/po-translate.pot
 source_lang  = en
 type         = PO
+
+[o:danielnylander:p:po-translate-ai:r:po-translate-man]
+file_filter  = po/man/<lang>.po
+source_file  = po/man/po-translate.1.pot
+source_lang  = en
+type         = PO
