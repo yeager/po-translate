@@ -194,6 +194,21 @@ Help translate po-translate on [Transifex](https://app.transifex.com/danielnylan
 - Python 3.8+
 - No external dependencies (stdlib only)
 
+## 🌍 Contributing Translations
+
+This app is translated via Transifex. Help translate it into your language!
+
+**[→ Translate on Transifex](https://app.transifex.com/danielnylander/po-translate/)**
+
+Currently supported: Swedish (sv). More languages welcome!
+
+### For Translators
+1. Create a free account at [Transifex](https://www.transifex.com)
+2. Join the [danielnylander](https://app.transifex.com/danielnylander/) organization
+3. Start translating!
+
+Translations are automatically synced via GitHub Actions.
+
 ## License
 
 GPL-3.0
