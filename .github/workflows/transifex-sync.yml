@@ -29,8 +29,8 @@ jobs:
           TX_TOKEN: ${{ secrets.TX_TOKEN }}
         run: tx pull --all --force --minimum-perc=20
 
-      - name: Install gettext
-        run: sudo apt-get install -y gettext
+      - name: Install tools
+        run: sudo apt-get install -y gettext po4a
 
       - name: Compile .mo files
         run: |
@@ -40,11 +40,17 @@ jobs:
             msgfmt -o "po/${lang}.mo" "$po"
           done
 
+      - name: Build translated man pages
+        run: |
+          if [ -f po4a.cfg ]; then
+            po4a po4a.cfg || true
+          fi
+
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add po/
+          git add po/ data/man/
           if git diff --cached --quiet; then
             echo "No translation changes"
           else
