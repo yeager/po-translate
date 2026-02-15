@@ -185,6 +185,10 @@ Use ISO 639-1 codes:
 
 - [l10n-lint](https://github.com/yeager/l10n-lint) – Lint your translation files
 
+## Translations
+
+Help translate po-translate on [Transifex](https://app.transifex.com/danielnylander/po-translate/).
+
 ## Requirements
 
 - Python 3.8+
