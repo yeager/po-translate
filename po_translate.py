@@ -15,7 +15,7 @@ Supports:
 
 import argparse
 import json
-import locale
+
 import os
 import re
 import sys
@@ -298,7 +298,7 @@ def load_glossary(filepath: str) -> dict:
     glossary = {}
     with open(filepath, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
-        header = next(reader, None)  # skip header
+        next(reader, None)  # skip header
         for row in reader:
             if len(row) >= 2:
                 glossary[row[0].strip()] = row[1].strip()
@@ -793,7 +793,7 @@ def translate_file(filepath: str, translator: Translator, source_lang: str, targ
         chars_per_sec = batch_chars / api_elapsed if api_elapsed > 0 else 0
         if _progress:
             _progress.update(len(batch))
-        print(f"✓")
+        print("✓")
         vprint(_("       API response: {elapsed:.2f}s ({speed:.0f} chars/s)").format(
             elapsed=api_elapsed, speed=chars_per_sec))
         

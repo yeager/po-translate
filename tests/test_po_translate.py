@@ -2,7 +2,7 @@
 import os
 import sys
 import tempfile
-import pytest
+
 
 # Add parent dir so we can import po_translate
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
