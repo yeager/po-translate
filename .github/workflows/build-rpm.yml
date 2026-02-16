@@ -1,0 +1,102 @@
+name: Build RPM
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-rpm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RPM tools
+        run: sudo apt-get update && sudo apt-get install -y rpm
+
+      - name: Get version
+        id: version
+        run: echo "version=$(grep -oP '__version__ = \"\K[^\"]+' po_translate.py)" >> $GITHUB_OUTPUT
+
+      - name: Setup RPM build
+        run: |
+          mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+          VERSION=${{ steps.version.outputs.version }}
+          PKG=po-translate-$VERSION
+          mkdir -p $PKG/data/man
+          cp po_translate.py $PKG/
+          cp data/man/po-translate.1 $PKG/data/man/
+          cp io.github.yeager.po-translate.metainfo.xml $PKG/
+          cp LICENSE $PKG/
+          if [ -d locale ]; then
+            cp -r locale $PKG/
+          fi
+          tar czf ~/rpmbuild/SOURCES/po-translate-$VERSION.tar.gz $PKG
+
+      - name: Create spec file
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          cat > ~/rpmbuild/SPECS/po-translate.spec << SPEC
+Name:           po-translate
+Version:        $VERSION
+Release:        1
+Summary:        Batch translate PO and TS localization files
+License:        GPL-3.0-or-later
+URL:            https://github.com/yeager/po-translate
+Source0:        %{name}-%{version}.tar.gz
+BuildArch:      noarch
+Requires:       python3 >= 3.9
+
+%description
+A CLI tool for batch translating PO and TS files using various translation APIs.
+
+%prep
+%setup -q
+
+%install
+mkdir -p %{buildroot}%{_datadir}/po-translate
+cp po_translate.py %{buildroot}%{_datadir}/po-translate/
+mkdir -p %{buildroot}%{_bindir}
+cat > %{buildroot}%{_bindir}/po-translate << 'WRAPPER'
+#!/bin/bash
+exec python3 %{_datadir}/po-translate/po_translate.py "\$@"
+WRAPPER
+chmod 755 %{buildroot}%{_bindir}/po-translate
+install -Dm644 data/man/po-translate.1 %{buildroot}%{_mandir}/man1/po-translate.1
+install -Dm644 io.github.yeager.po-translate.metainfo.xml %{buildroot}%{_datadir}/metainfo/io.github.yeager.po-translate.metainfo.xml
+
+if [ -d locale ]; then
+  for mo in locale/*/LC_MESSAGES/*.mo; do
+    [ -f "\$mo" ] || continue
+    lang=\$(echo "\$mo" | cut -d/ -f2)
+    install -Dm644 "\$mo" "%{buildroot}%{_datadir}/locale/\$lang/LC_MESSAGES/po-translate.mo"
+  done
+fi
+
+%files
+%license LICENSE
+%{_bindir}/po-translate
+%{_datadir}/po-translate/
+%{_mandir}/man1/po-translate.1*
+%{_datadir}/metainfo/io.github.yeager.po-translate.metainfo.xml
+
+%changelog
+* Mon Feb 16 2026 Daniel Nylander <daniel@danielnylander.se> - $VERSION-1
+- RPM package
+SPEC
+
+      - name: Build RPM
+        run: rpmbuild -ba ~/rpmbuild/SPECS/po-translate.spec
+
+      - name: Upload RPM to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          gh release upload "v${VERSION}" \
+            ~/rpmbuild/RPMS/noarch/po-translate-${VERSION}-1.noarch.rpm \
+            --clobber
