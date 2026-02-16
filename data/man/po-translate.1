@@ -1,72 +1,187 @@
-.TH PO-TRANSLATE 1 "2026-02-15" "Daniel Nylander" "po-translate Manual"
+.TH PO-TRANSLATE 1 "February 2026" "po-translate 1.5.4" "User Commands"
 .SH NAME
-po-translate - Batch translate PO and TS files using AI
+po\-translate \- machine\-translate PO files using multiple backends
 .SH SYNOPSIS
-.B po-translate
-.RI [ OPTIONS ]
-.I PATHS...
+.B po\-translate
+\fB\-s\fR \fISOURCE\fR [\fB\-t\fR \fITARGET\fR] [\fIOPTIONS\fR] \fIPATHS\fR...
 .SH DESCRIPTION
-\fBpo-translate\fR batch translates .po, .ts, and .xliff localization files using AI or free translation services. It supports 8 translation backends (Lingva, MyMemory, LibreTranslate, DeepL, Google, OpenAI, Anthropic), custom glossaries, placeholder preservation, and dry-run mode.
-.SH OPTIONS
+\fBpo\-translate\fR translates untranslated entries in PO (gettext) files
+using machine translation services. It supports multiple backends
+including free services (Lingva, MyMemory), self\-hosted (LibreTranslate),
+and commercial APIs (DeepL, Google, OpenAI, Anthropic).
+.PP
+Only empty (untranslated) msgstr entries are translated. Existing
+translations are never overwritten. Translated entries are automatically
+marked as fuzzy for human review.
+.PP
+Exit codes: 0 = success, 1 = translation errors, 2 = usage error.
+.SH POSITIONAL ARGUMENTS
 .TP
 .I PATHS
-Files or directories to translate.
+PO files or directories containing PO files. Directories are searched
+recursively unless \fB\-\-no\-recursive\fR is set.
+.SH REQUIRED OPTIONS
 .TP
-.BR \-s ", " \-\-source " " \fILANG\fR
-Source language code (e.g., en). Required.
+\fB\-s\fR, \fB\-\-source\fR \fILANG\fR
+Source language code (e.g., \fBen\fR, \fBde\fR, \fBfr\fR). This is
+the language of the original msgid strings. Required.
+.SH OPTIONS
 .TP
-.BR \-t ", " \-\-target " " \fILANG\fR
-Target language code (e.g., sv). Defaults to system LANG.
+\fB\-t\fR, \fB\-\-target\fR \fILANG\fR
+Target language code (e.g., \fBsv\fR, \fBde\fR, \fBfr\fR). If omitted,
+defaults to the system locale (LANG environment variable).
 .TP
-.BR \-\-service " " \fISERVICE\fR
-Translation service: lingva, mymemory, libretranslate, deepl, deepl-free, google, openai, anthropic (default: lingva).
+\fB\-\-service\fR \fISERVICE\fR
+Translation backend. Choices:
+.RS
 .TP
-.BR \-\-api\-key " " \fIKEY\fR
-API key for paid services.
+\fBlingva\fR (default)
+Free, no API key required. Uses Lingva Translate public instances.
+Good for most European languages.
 .TP
-.BR \-\-url " " \fIURL\fR
-Custom URL for LibreTranslate.
+\fBmymemory\fR
+Free tier (1000 words/day). Uses MyMemory Translation Memory API.
 .TP
-.BR \-\-model " " \fIMODEL\fR
-Model for AI services (e.g., gpt-4o-mini, claude-3-haiku-20240307).
+\fBlibretranslate\fR
+Self\-hosted or public LibreTranslate instance. Use \fB\-\-url\fR to
+specify your server URL.
 .TP
-.BR \-\-batch\-size " " \fIN\fR
-Entries per API call (default: 10).
+\fBdeepl\fR
+DeepL Pro API. Requires \fB\-\-api\-key\fR. High\-quality translations
+for supported languages.
 .TP
-.BR \-\-glossary " " \fIFILE\fR
-CSV glossary file (source,target per line) for custom terms.
+\fBdeepl\-free\fR
+DeepL Free API. Requires \fB\-\-api\-key\fR. Limited to 500,000
+characters/month.
 .TP
-.B \-\-dry\-run
-Do not save changes.
+\fBgoogle\fR
+Google Cloud Translation API. Requires \fB\-\-api\-key\fR.
 .TP
-.B \-\-no\-recursive
-Do not search subdirectories.
+\fBopenai\fR
+OpenAI GPT models. Requires \fB\-\-api\-key\fR. Use \fB\-\-model\fR to
+select model (default: gpt\-4o\-mini).
 .TP
-.BR \-V ", " \-\-verbose
-Show detailed progress.
+\fBanthropic\fR
+Anthropic Claude models. Requires \fB\-\-api\-key\fR. Use \fB\-\-model\fR
+to select model (default: claude\-3\-haiku\-20240307).
+.RE
 .TP
-.BR \-v ", " \-\-version
+\fB\-\-api\-key\fR \fIKEY\fR
+API key for paid services (DeepL, Google, OpenAI, Anthropic). Can also
+be set via environment variables: DEEPL_API_KEY, GOOGLE_API_KEY,
+OPENAI_API_KEY, ANTHROPIC_API_KEY.
+.TP
+\fB\-\-url\fR \fIURL\fR
+Custom server URL for LibreTranslate. Example:
+\fBhttp://localhost:5000\fR
+.TP
+\fB\-\-model\fR \fIMODEL\fR
+Model name for AI services. Examples: \fBgpt\-4o\-mini\fR,
+\fBclaude\-3\-haiku\-20240307\fR.
+.TP
+\fB\-\-batch\-size\fR \fIN\fR
+Number of entries per API call. Higher values are faster but may hit
+rate limits. Default: 10.
+.TP
+\fB\-\-glossary\fR \fIFILE\fR
+CSV glossary file for custom terminology. Format: one \fIsource,target\fR
+pair per line. Glossary terms override machine translations.
+.TP
+\fB\-\-dry\-run\fR
+Show what would be translated without saving changes. Useful for
+previewing translations before committing.
+.TP
+\fB\-\-no\-recursive\fR
+Do not search subdirectories for PO files.
+.TP
+\fB\-j\fR, \fB\-\-json\fR
+Output results as JSON for scripting.
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Suppress non\-essential output. Only errors are shown.
+.TP
+\fB\-V\fR, \fB\-\-verbose\fR
+Show detailed progress including each entry being translated.
+.TP
+\fB\-\-about\fR
+Show application info (name, version, author, license) and exit.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Show help message and exit.
+.TP
+\fB\-v\fR, \fB\-\-version\fR
 Show version number and exit.
+.SH EXIT STATUS
 .TP
-.B \-\-about
-Show application info and exit.
+.B 0
+All entries translated successfully.
+.TP
+.B 1
+Some entries failed to translate (partial success).
+.TP
+.B 2
+Usage error (invalid arguments, missing required options).
 .SH EXAMPLES
+Translate all PO files using the free Lingva service:
+.PP
+.RS
 .nf
-po-translate -s en -t sv messages.po
-po-translate -s en --service deepl --api-key KEY translations/
-po-translate -s en -t de --service openai --model gpt-4o-mini *.po
-po-translate -s en --glossary terms.csv --dry-run project/
+po\-translate \-s en \-t sv po/
 .fi
-.SH FILES
+.RE
+.PP
+Use DeepL with an API key:
+.PP
+.RS
+.nf
+po\-translate \-s en \-t de \-\-service deepl \-\-api\-key YOUR_KEY po/
+.fi
+.RE
+.PP
+Translate with a custom glossary:
+.PP
+.RS
+.nf
+po\-translate \-s en \-t sv \-\-glossary terms.csv myapp.po
+.fi
+.RE
+.PP
+Dry\-run with JSON output:
+.PP
+.RS
+.nf
+po\-translate \-s en \-t sv \-\-dry\-run \-\-json po/sv.po
+.fi
+.RE
+.PP
+Use OpenAI GPT\-4 for high\-quality translations:
+.PP
+.RS
+.nf
+po\-translate \-s en \-t sv \-\-service openai \-\-model gpt\-4o \-\-api\-key $OPENAI_API_KEY po/
+.fi
+.RE
+.SH ENVIRONMENT
 .TP
-.I ~/.config/po-translate/
-Configuration files.
+.B DEEPL_API_KEY
+API key for DeepL translation service.
 .TP
-.I ~/.cache/po-translate/
-Cached data.
-.SH BUGS
-Report bugs at https://github.com/yeager/po-translate/issues
+.B OPENAI_API_KEY
+API key for OpenAI.
+.TP
+.B ANTHROPIC_API_KEY
+API key for Anthropic Claude.
+.TP
+.B GOOGLE_API_KEY
+API key for Google Cloud Translation.
+.SH SEE ALSO
+.BR l10n\-lint (1),
+.BR tp\-lint (1),
+.BR po\-diff (1),
+.BR msgmerge (1)
 .SH AUTHOR
 Daniel Nylander <daniel@danielnylander.se>
-.SH SEE ALSO
-Project homepage: https://github.com/yeager/po-translate
+.SH BUGS
+Report bugs at: https://github.com/yeager/po\-translate/issues
+.SH COPYRIGHT
+Copyright \(co 2026 Daniel Nylander. License: GPL\-3.0\-or\-later.
