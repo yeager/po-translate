@@ -6,122 +6,248 @@ po-translate \- batch translate PO and TS localization files
 \fB\-\-source\fR \fILANG\fR [\fB\-\-target\fR \fILANG\fR] [\fIOPTIONS\fR] \fIPATH\fR...
 .SH DESCRIPTION
 .B po-translate
-automatically translates gettext .po and Qt .ts files using various
-translation services, both free and commercial.
-.PP
-If \fB\-\-target\fR is not specified, the target language is detected
-from the \fBLANG\fR environment variable.
+automatically translates GNU gettext .po and Qt Linguist .ts files using
+various translation services, including free services, commercial APIs,
+and AI-powered translation models. It preserves file structure, metadata,
+and formatting while translating only untranslated entries.
+
+The tool supports both batch processing of multiple files and directories,
+as well as single-file operations. It can work with translation glossaries
+for consistent terminology and provides dry-run capabilities for previewing
+changes before applying them.
+
+If \fB\-\-target\fR is not specified, the target language is automatically
+detected from the \fBLANG\fR environment variable.
 .SH OPTIONS
 .TP
 .BR \-h ", " \-\-help
-Show help message and exit.
+Display comprehensive help message with all available options and usage
+examples, then exit.
 .TP
 .BR \-v ", " \-\-version
-Show version number and exit.
+Show version number, build information, and supported features, then exit.
 .TP
-.BR \-s ", " \-\-source " " \fILANG\fR
-Source language code (required). Example: en
+.BR \-s " " \fILANG\fR ", " \-\-source " " \fILANG\fR
+Source language code (required). Must be a valid ISO 639-1 or RFC 5646
+language code. Examples: 'en', 'en-US', 'pt-BR'. This language should
+match the original text in the localization files.
 .TP
-.BR \-t ", " \-\-target " " \fILANG\fR
-Target language code. Defaults to system LANG.
+.BR \-t " " \fILANG\fR ", " \-\-target " " \fILANG\fR
+Target language code for translation output. Uses the same format as
+source language. If not specified, defaults to the language extracted
+from the system \fBLANG\fR environment variable.
 .TP
 .BR \-\-service " " \fISERVICE\fR
-Translation service (default: lingva).
-Available: lingva, mymemory, libretranslate, deepl, deepl-free, google, openai, anthropic
+Translation service to use (default: lingva). Each service has different
+characteristics in terms of quality, speed, cost, and API requirements.
+See SERVICES section for detailed information about each provider.
 .TP
 .BR \-\-api\-key " " \fIKEY\fR
-API key for paid services (DeepL, Google, OpenAI, Anthropic).
-.TP
-.BR \-\-model " " \fIMODEL\fR
-Model for AI services. Example: gpt-4o-mini, claude-3-haiku-20240307
-.TP
-.BR \-\-batch\-size " " \fIN\fR
-Entries per API call (default: 10).
-.TP
-.BR \-\-dry\-run
-Preview changes without saving.
-.TP
-.BR \-\-no\-recursive
-Do not search subdirectories.
-.TP
-.BR \-\-glossary " " \fIFILE\fR
-Use translation glossary file for consistency. Supports TBX, CSV, and TSV formats.
+API key for commercial and AI-powered services. Required for deepl,
+deepl-free, google, openai, and anthropic services. Can also be provided
+via environment variables (see ENVIRONMENT section).
 .TP
 .BR \-\-url " " \fIURL\fR
-Custom server URL for LibreTranslate or other compatible services.
+Custom server URL for LibreTranslate or other compatible self-hosted
+translation services. Useful for private LibreTranslate instances or
+alternative endpoints. Must be a complete URL including protocol.
+.TP
+.BR \-\-model " " \fIMODEL\fR
+Specific model to use for AI translation services. Only applicable to
+openai and anthropic services. Examples: 'gpt-4o-mini', 'gpt-4o',
+'claude-3-haiku-20240307', 'claude-3-sonnet-20240229'. Different
+models offer trade-offs between speed, quality, and cost.
+.TP
+.BR \-\-batch\-size " " \fIN\fR
+Number of translation entries to process in a single API call (default: 10).
+Larger batch sizes can improve efficiency but may hit API limits or
+cause timeouts. Smaller batches provide more granular progress feedback
+and error recovery.
+.TP
+.BR \-\-glossary " " \fIFILE\fR
+Path to a glossary file for consistent translation of terminology.
+Supports multiple formats: CSV (source,target), TSV (tab-separated),
+and TBX (TermBase eXchange). Glossary terms take precedence over
+service translations for matching strings.
+.TP
+.BR \-\-dry\-run
+Preview mode that processes files and shows what translations would be
+applied without actually modifying any files. Useful for testing
+service configurations and reviewing potential changes before commitment.
+.TP
+.BR \-\-no\-recursive
+Disable recursive directory searching. When specified, only process
+files directly in the given directories without descending into
+subdirectories. Useful for controlled processing of large directory
+structures.
 .TP
 .BR \-j ", " \-\-json
-Output progress and results in JSON format for programmatic use.
+Format all output as JSON for programmatic consumption and integration
+with automation scripts. Progress updates, results, and statistics
+are provided in structured JSON format. Error messages remain in
+plain text to stderr.
 .TP
 .BR \-q ", " \-\-quiet
-Suppress non-essential output, showing only errors and final summary.
+Suppress non-essential output including progress indicators and
+informational messages. Only display errors and the final summary.
+Exit codes still indicate success/failure status.
 .TP
 .BR \-V ", " \-\-verbose
-Show detailed progress information including API calls and timing.
+Enable detailed progress output including API call details, timing
+information, batch processing status, individual entry results, and
+service-specific diagnostic information. Useful for debugging and
+performance analysis.
 .TP
 .BR \-\-about
-Show detailed information about the application and supported features.
+Display comprehensive application information including version details,
+supported file formats, available services, feature overview, and
+licensing information, then exit.
 .SH SERVICES
+.B po-translate
+supports multiple translation services with different characteristics:
+
 .TP
-.B lingva
-Free, no API key required. Uses Lingva Translate instances.
+.B lingva (default)
+Free translation service using Lingva Translate instances. No API key
+required. Supports many language pairs with reasonable quality. May
+have rate limiting during peak usage. Best for: casual use, testing,
+non-commercial projects.
+
 .TP
 .B mymemory
-Free tier available. 1000 words/day without key.
+Translated.net's MyMemory service. Offers a free tier with 1000 words
+per day without registration. Higher limits available with API keys.
+Combines machine translation with translation memory. Best for: small
+projects, occasional use.
+
 .TP
 .B libretranslate
-Self-hosted option available. Use \-\-url for custom instance.
+Open-source neural machine translation. Can use public instances or
+self-hosted deployments via \-\-url. Good balance of quality and privacy.
+No API key required for public instances. Best for: privacy-conscious
+users, self-hosted environments.
+
 .TP
-.B deepl, deepl-free
-High quality. Requires API key.
+.B deepl
+Premium neural machine translation service known for high-quality
+results, especially for European languages. Requires API key and paid
+subscription. Offers excellent handling of context and idioms.
+Best for: professional translations, high-quality requirements.
+
+.TP
+.B deepl-free
+Free tier of DeepL service with monthly usage limits. Requires free
+API key registration. Same quality as paid DeepL but with restrictions
+on volume and features. Best for: evaluation, low-volume professional use.
+
 .TP
 .B google
-Google Cloud Translation. Requires API key.
+Google Cloud Translation API. Requires Google Cloud account and API key.
+Supports extensive language pairs with neural machine translation.
+Integration with Google's language detection and other services.
+Best for: enterprise integration, Google Cloud environments.
+
 .TP
 .B openai
-GPT models with context awareness. Requires API key.
+AI-powered translation using OpenAI's GPT models. Requires API key.
+Provides context-aware translations with understanding of nuance
+and cultural adaptation. Can handle complex technical terminology
+and maintain consistent tone. Best for: high-quality creative content,
+technical documentation.
+
 .TP
 .B anthropic
-Claude models with context awareness. Requires API key.
+Claude AI models for translation. Requires API key. Offers careful
+attention to context, cultural sensitivity, and maintaining original
+meaning. Excellent for nuanced content and complex linguistic
+requirements. Best for: literary content, cultural adaptation,
+complex technical material.
 .SH EXIT STATUS
 .TP
 .B 0
-Success.
+All translations completed successfully without errors or warnings.
 .TP
 .B 1
-Error occurred.
+Fatal error occurred such as invalid API credentials, network failures,
+unsupported language pairs, or file access problems.
 .SH EXAMPLES
 .TP
-Translate to system language (from LANG):
+Translate files to system language (auto-detected from LANG):
 .B po-translate \-\-source en messages.po
 .TP
-Translate English to Swedish using free service:
-.B po-translate \-s en \-t sv locale/
+Batch translate directory from English to Swedish:
+.B po-translate \-\-source en \-\-target sv locale/
 .TP
-Use DeepL with API key:
-.B po-translate \-s en \-t de \-\-service deepl \-\-api\-key KEY file.po
+Use DeepL with API key for high-quality translation:
+.B po-translate \-s en \-t de \-\-service deepl \-\-api\-key $DEEPL_API_KEY file.po
 .TP
-Dry run with OpenAI:
-.B po-translate \-s en \-t fr \-\-service openai \-\-dry\-run .
+Preview OpenAI translation without saving:
+.B po-translate \-s en \-t fr \-\-service openai \-\-dry\-run translations/
+.TP
+Use custom LibreTranslate instance:
+.B po-translate \-s en \-t es \-\-service libretranslate \-\-url https://translate.example.com
+.TP
+Translate with glossary for consistent terminology:
+.B po-translate \-s en \-t ja \-\-glossary terms.csv locale/
+.TP
+Use AI with specific model and larger batches:
+.B po-translate \-s en \-t de \-\-service openai \-\-model gpt\-4o \-\-batch\-size 5 src.po
+.TP
+Quiet processing with JSON output for automation:
+.B po-translate \-s en \-t ru \-\-quiet \-\-json \-\-service mymemory po/
+.TP
+Verbose translation with timing information:
+.B po-translate \-s en \-t zh \-\-verbose \-\-service deepl\-free docs/
+.TP
+Non-recursive processing of specific directory:
+.B po-translate \-s en \-t ko \-\-no\-recursive \-\-service google top\-level/
 .SH ENVIRONMENT
 .TP
 .B LANG
-Used as default target language if \-\-target not specified.
+Default target language when \-\-target is not specified. The language
+code is extracted from the locale format (e.g., 'sv_SE.UTF-8' becomes 'sv').
 .TP
 .B OPENAI_API_KEY
-API key for OpenAI service.
+API key for OpenAI service. Used automatically when \-\-service is openai
+and no \-\-api\-key is provided.
 .TP
 .B ANTHROPIC_API_KEY
-API key for Anthropic service.
+API key for Anthropic service. Used automatically when \-\-service is
+anthropic and no \-\-api\-key is provided.
 .TP
 .B DEEPL_API_KEY
-API key for DeepL service.
+API key for DeepL services. Used automatically when \-\-service is
+deepl or deepl\-free and no \-\-api\-key is provided.
+.TP
+.B GOOGLE_API_KEY
+API key for Google Cloud Translation. Used automatically when
+\-\-service is google and no \-\-api\-key is provided.
+.SH FILES
+.TP
+.B *.po
+GNU gettext Portable Object files (primary format)
+.TP
+.B *.ts
+Qt Linguist Translation Source files
+.TP
+.B *.pot
+GNU gettext Portable Object Template files (read-only)
+.TP
+.B ~/.config/po-translate/
+User configuration directory
+.TP
+.B ~/.config/po-translate/glossaries/
+Default location for glossary files
 .SH AUTHOR
 Daniel Nylander <daniel@danielnylander.se>
 .SH SEE ALSO
 .BR l10n-lint (1),
+.BR l10n-conv (1),
+.BR svlang (1),
 .BR tp-lint (1),
 .BR msgfmt (1),
-.BR msginit (1)
+.BR msginit (1),
+.BR msgmerge (1),
+.BR xgettext (1)
 .SH BUGS
 Report bugs at: https://github.com/yeager/po-translate/issues
