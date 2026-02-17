@@ -164,11 +164,11 @@ msgstr "Sök inte i underkataloger"
 
 #: po_translate.py:908
 msgid "JSON output"
-msgstr ""
+msgstr "JSON-utdata"
 
 #: po_translate.py:909
 msgid "Suppress non-essential output (only errors)"
-msgstr ""
+msgstr "Undertryck onödig utdata (endast fel)"
 
 #: po_translate.py:910
 msgid "Show detailed progress"

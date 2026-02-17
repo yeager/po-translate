@@ -31,19 +31,19 @@ msgstr "PO-TRANSLATE"
 #: data/man/po-translate.1:1
 #, no-wrap
 msgid "February 2026"
-msgstr ""
+msgstr "Februari 2026"
 
 #. type: TH
 #: data/man/po-translate.1:1
 #, no-wrap
 msgid "po-translate 1.5.4"
-msgstr ""
+msgstr "po-translate 1.5.4"
 
 #. type: TH
 #: data/man/po-translate.1:1
 #, no-wrap
 msgid "User Commands"
-msgstr ""
+msgstr "Användarkommandon"
 
 #. type: SH
 #: data/man/po-translate.1:2
@@ -54,7 +54,7 @@ msgstr "NAMN"
 #. type: Plain text
 #: data/man/po-translate.1:4
 msgid "po-translate - machine-translate PO files using multiple backends"
-msgstr ""
+msgstr "po-translate – maskinöversätt PO-filer med hjälp av flera backends"
 
 #. type: SH
 #: data/man/po-translate.1:4
@@ -67,6 +67,7 @@ msgstr "SYNOPSIS"
 msgid ""
 "B<po-translate> B<-s> I<SOURCE> [B<-t> I<TARGET>] [I<OPTIONS>] I<PATHS>..."
 msgstr ""
+"B<po-translate> B<-s> I<KÄLLA> [B<-t> I<MÅL>] [I<FLAGGOR>] I<SÖKVÄGAR>..."
 
 #. type: SH
 #: data/man/po-translate.1:7
@@ -82,6 +83,10 @@ msgid ""
 "services (Lingva, MyMemory), self-hosted (LibreTranslate), and commercial "
 "APIs (DeepL, Google, OpenAI, Anthropic)."
 msgstr ""
+"B<po-translate> översätter icke-översatta poster i PO-filer (gettext) med "
+"hjälp av maskinöversättningstjänster. Det stöder flera backends, inklusive "
+"gratistjänster (Lingva, MyMemory), självhostade (LibreTranslate) och "
+"kommersiella API:er (DeepL, Google, OpenAI, Anthropic)."
 
 #. type: Plain text
 #: data/man/po-translate.1:16
@@ -90,23 +95,27 @@ msgid ""
 "translations are never overwritten. Translated entries are automatically "
 "marked as fuzzy for human review."
 msgstr ""
+"Endast tomma (icke-översatta) msgstr-poster översätts. Befintliga "
+"översättningar skrivs aldrig över. Översatta poster markeras automatiskt som "
+"oklara för manuell granskning."
 
 #. type: Plain text
 #: data/man/po-translate.1:18
 msgid "Exit codes: 0 = success, 1 = translation errors, 2 = usage error."
 msgstr ""
+"Avslutningskoder: 0 = lyckades, 1 = översättningsfel, 2 = användningsfel."
 
 #. type: SH
 #: data/man/po-translate.1:18
 #, no-wrap
 msgid "POSITIONAL ARGUMENTS"
-msgstr ""
+msgstr "POSITIONELLA ARGUMENT"
 
 #. type: TP
 #: data/man/po-translate.1:19
 #, no-wrap
 msgid "I<PATHS>"
-msgstr "I<PATHS>"
+msgstr "I<SÖKVÄGAR>"
 
 #. type: Plain text
 #: data/man/po-translate.1:23
@@ -114,18 +123,20 @@ msgid ""
 "PO files or directories containing PO files. Directories are searched "
 "recursively unless B<--no-recursive> is set."
 msgstr ""
+"PO-filer eller kataloger som innehåller PO-filer. Kataloger söks rekursivt "
+"om inte B<--no-recursive> är inställt."
 
 #. type: SH
 #: data/man/po-translate.1:23
 #, no-wrap
 msgid "REQUIRED OPTIONS"
-msgstr ""
+msgstr "NÖDVÄNDIGA FLAGGOR"
 
 #. type: TP
 #: data/man/po-translate.1:24
 #, no-wrap
 msgid "B<-s>, B<--source> I<LANG>"
-msgstr "B<-s>, B<--source> I<LANG>"
+msgstr "B<-s>, B<--source> I<SPRÅK>"
 
 #. type: Plain text
 #: data/man/po-translate.1:28
@@ -133,6 +144,8 @@ msgid ""
 "Source language code (e.g., B<en>, B<de>, B<fr>). This is the language of "
 "the original msgid strings. Required."
 msgstr ""
+"Källspråkskod (t.ex. B<en>, B<de>, B<fr>). Detta är språket i de "
+"ursprungliga msgid-strängarna. Obligatoriskt."
 
 #. type: SH
 #: data/man/po-translate.1:28
@@ -144,7 +157,7 @@ msgstr "FLAGGOR"
 #: data/man/po-translate.1:29
 #, no-wrap
 msgid "B<-t>, B<--target> I<LANG>"
-msgstr "B<-t>, B<--target> I<LANG>"
+msgstr "B<-t>, B<--target> I<SPRÅK>"
 
 #. type: Plain text
 #: data/man/po-translate.1:33
@@ -152,23 +165,25 @@ msgid ""
 "Target language code (e.g., B<sv>, B<de>, B<fr>). If omitted, defaults to "
 "the system locale (LANG environment variable)."
 msgstr ""
+"Målspråkskod (t.ex. B<sv>, B<de>, B<fr>). Om detta utelämnas används "
+"systemets lokala inställningar (miljövariabeln LANG) som standard."
 
 #. type: TP
 #: data/man/po-translate.1:33
 #, no-wrap
 msgid "B<--service> I<SERVICE>"
-msgstr "B<--service> I<SERVICE>"
+msgstr "B<--service> I<TJÄNST>"
 
 #. type: Plain text
 #: data/man/po-translate.1:36
 msgid "Translation backend. Choices:"
-msgstr ""
+msgstr "Översättningsbackend. Alternativ:"
 
 #. type: TP
 #: data/man/po-translate.1:37
 #, no-wrap
 msgid "B<lingva> (default)"
-msgstr ""
+msgstr "B<lingva> (standard)"
 
 #. type: Plain text
 #: data/man/po-translate.1:41
@@ -176,23 +191,25 @@ msgid ""
 "Free, no API key required. Uses Lingva Translate public instances.  Good for "
 "most European languages."
 msgstr ""
+"Gratis, ingen API-nyckel krävs. Använder Lingva Translate offentliga "
+"instanser. Passar bra för de flesta europeiska språk."
 
 #. type: TP
 #: data/man/po-translate.1:41
 #, no-wrap
 msgid "B<mymemory>"
-msgstr ""
+msgstr "B<mymemory>"
 
 #. type: Plain text
 #: data/man/po-translate.1:44
 msgid "Free tier (1000 words/day). Uses MyMemory Translation Memory API."
-msgstr ""
+msgstr "Gratis nivå (1000 ord/dag). Använder MyMemory Translation Memory API."
 
 #. type: TP
 #: data/man/po-translate.1:44
 #, no-wrap
 msgid "B<libretranslate>"
-msgstr ""
+msgstr "B<libretranslate>"
 
 #. type: Plain text
 #: data/man/po-translate.1:48
@@ -200,12 +217,14 @@ msgid ""
 "Self-hosted or public LibreTranslate instance. Use B<--url> to specify your "
 "server URL."
 msgstr ""
+"Självhostad eller publik LibreTranslate-instans. Använd B<--url> för att "
+"ange din server-URL."
 
 #. type: TP
 #: data/man/po-translate.1:48
 #, no-wrap
 msgid "B<deepl>"
-msgstr ""
+msgstr "B<deepl>"
 
 #. type: Plain text
 #: data/man/po-translate.1:52
@@ -213,35 +232,38 @@ msgid ""
 "DeepL Pro API. Requires B<--api-key>. High-quality translations for "
 "supported languages."
 msgstr ""
+"DeepL Pro API. Kräver B-<--api-key>. Högkvalitativa översättningar för språk "
+"som stöds."
 
 #. type: TP
 #: data/man/po-translate.1:52
 #, no-wrap
 msgid "B<deepl-free>"
-msgstr ""
+msgstr "B<deepl-free>"
 
 #. type: Plain text
 #: data/man/po-translate.1:56
 msgid ""
 "DeepL Free API. Requires B<--api-key>. Limited to 500,000 characters/month."
 msgstr ""
+"DeepL Free API. Kräver B-<--api-key>. Begränsat till 500 000 tecken/månad."
 
 #. type: TP
 #: data/man/po-translate.1:56
 #, no-wrap
 msgid "B<google>"
-msgstr ""
+msgstr "B<google>"
 
 #. type: Plain text
 #: data/man/po-translate.1:59
 msgid "Google Cloud Translation API. Requires B<--api-key>."
-msgstr ""
+msgstr "Google Cloud Translation API. Kräver B<--api-key>."
 
 #. type: TP
 #: data/man/po-translate.1:59
 #, no-wrap
 msgid "B<openai>"
-msgstr ""
+msgstr "B<openai>"
 
 #. type: Plain text
 #: data/man/po-translate.1:63
@@ -249,12 +271,14 @@ msgid ""
 "OpenAI GPT models. Requires B<--api-key>. Use B<--model> to select model "
 "(default: gpt-4o-mini)."
 msgstr ""
+"OpenAI GPT-modeller. Kräver B<--api-key>. Använd B<--model> för att välja "
+"modell (standard: gpt-4o-mini)."
 
 #. type: TP
 #: data/man/po-translate.1:63
 #, no-wrap
 msgid "B<anthropic>"
-msgstr ""
+msgstr "B<anthropic>"
 
 #. type: Plain text
 #: data/man/po-translate.1:67
@@ -262,12 +286,14 @@ msgid ""
 "Anthropic Claude models. Requires B<--api-key>. Use B<--model> to select "
 "model (default: claude-3-haiku-20240307)."
 msgstr ""
+"Anthropic Claude-modeller. Kräver B<--api-key>. Använd B<--model> för att "
+"välja modell (standard: claude-3-haiku-20240307)."
 
 #. type: TP
 #: data/man/po-translate.1:68
 #, no-wrap
 msgid "B<--api-key> I<KEY>"
-msgstr "B<--api-key> I<KEY>"
+msgstr "B<--api-key> I<NYCKEL>"
 
 #. type: Plain text
 #: data/man/po-translate.1:73
@@ -276,6 +302,9 @@ msgid ""
 "set via environment variables: DEEPL_API_KEY, GOOGLE_API_KEY, "
 "OPENAI_API_KEY, ANTHROPIC_API_KEY."
 msgstr ""
+"API-nyckel för betaltjänster (DeepL, Google, OpenAI, Anthropic). Kan också "
+"ställas in via miljövariabler: DEEPL_API_KEY, GOOGLE_API_KEY, "
+"OPENAI_API_KEY, ANTHROPIC_API_KEY."
 
 #. type: TP
 #: data/man/po-translate.1:73
@@ -287,12 +316,13 @@ msgstr "B<--url> I<URL>"
 #: data/man/po-translate.1:77
 msgid "Custom server URL for LibreTranslate. Example: B<http://localhost:5000>"
 msgstr ""
+"Anpassad server-URL för LibreTranslate. Exempel: B<http://localhost:5000>"
 
 #. type: TP
 #: data/man/po-translate.1:77
 #, no-wrap
 msgid "B<--model> I<MODEL>"
-msgstr "B<--model> I<MODEL>"
+msgstr "B<--model> I<MODELL>"
 
 #. type: Plain text
 #: data/man/po-translate.1:81
@@ -300,6 +330,8 @@ msgid ""
 "Model name for AI services. Examples: B<gpt-4o-mini>, B<claude-3-"
 "haiku-20240307>."
 msgstr ""
+"Modellnamn för AI-tjänster. Exempel: B<gpt-4o-mini>, B<claude-3-"
+"haiku-20240307>."
 
 #. type: TP
 #: data/man/po-translate.1:81
@@ -313,12 +345,14 @@ msgid ""
 "Number of entries per API call. Higher values are faster but may hit rate "
 "limits. Default: 10."
 msgstr ""
+"Antal poster per API-anrop. Högre värden är snabbare men kan nå "
+"hastighetsbegränsningar. Standard: 10."
 
 #. type: TP
 #: data/man/po-translate.1:85
 #, no-wrap
 msgid "B<--glossary> I<FILE>"
-msgstr "B<--glossary> I<FILE>"
+msgstr "B<--glossary> I<FIL>"
 
 #. type: Plain text
 #: data/man/po-translate.1:89
@@ -326,6 +360,8 @@ msgid ""
 "CSV glossary file for custom terminology. Format: one I<source,target> pair "
 "per line. Glossary terms override machine translations."
 msgstr ""
+"CSV-ordlista för anpassad terminologi. Format: ett I<källa,mål>-par per rad. "
+"Ordlistans termer åsidosätter maskinöversättningar."
 
 #. type: TP
 #: data/man/po-translate.1:89
@@ -339,6 +375,8 @@ msgid ""
 "Show what would be translated without saving changes. Useful for previewing "
 "translations before committing."
 msgstr ""
+"Visa vad som skulle översättas utan att spara ändringarna. Användbart för "
+"att förhandsgranska översättningar innan de skickas in."
 
 #. type: TP
 #: data/man/po-translate.1:93
@@ -349,29 +387,29 @@ msgstr "B<--no-recursive>"
 #. type: Plain text
 #: data/man/po-translate.1:96
 msgid "Do not search subdirectories for PO files."
-msgstr ""
+msgstr "Sök inte efter PO-filer i underkataloger."
 
 #. type: TP
 #: data/man/po-translate.1:96
 #, no-wrap
 msgid "B<-j>, B<--json>"
-msgstr ""
+msgstr "B<-j>, B<--json>"
 
 #. type: Plain text
 #: data/man/po-translate.1:99
 msgid "Output results as JSON for scripting."
-msgstr ""
+msgstr "Skriv ut resultaten som JSON för skriptning."
 
 #. type: TP
 #: data/man/po-translate.1:99
 #, no-wrap
 msgid "B<-q>, B<--quiet>"
-msgstr ""
+msgstr "B<-q>, B<--quiet>"
 
 #. type: Plain text
 #: data/man/po-translate.1:102
 msgid "Suppress non-essential output. Only errors are shown."
-msgstr ""
+msgstr "Undertryck onödig utdata. Endast fel visas."
 
 #. type: TP
 #: data/man/po-translate.1:102
@@ -382,7 +420,7 @@ msgstr "B<-V>, B<--verbose>"
 #. type: Plain text
 #: data/man/po-translate.1:105
 msgid "Show detailed progress including each entry being translated."
-msgstr ""
+msgstr "Visa detaljerat förlopp inklusive varje post som översätts."
 
 #. type: TP
 #: data/man/po-translate.1:105
@@ -394,17 +432,18 @@ msgstr "B<--about>"
 #: data/man/po-translate.1:108
 msgid "Show application info (name, version, author, license) and exit."
 msgstr ""
+"Visa programinformation (namn, version, upphovsperson, licens) och avsluta."
 
 #. type: TP
 #: data/man/po-translate.1:108
 #, no-wrap
 msgid "B<-h>, B<--help>"
-msgstr ""
+msgstr "B<-h>, B<--help>"
 
 #. type: Plain text
 #: data/man/po-translate.1:111
 msgid "Show help message and exit."
-msgstr ""
+msgstr "Visa hjälpmeddelande och avsluta."
 
 #. type: TP
 #: data/man/po-translate.1:111
@@ -421,40 +460,40 @@ msgstr "Visa versionsnummer och avsluta."
 #: data/man/po-translate.1:114
 #, no-wrap
 msgid "EXIT STATUS"
-msgstr ""
+msgstr "AVSLUTSSTATUS"
 
 #. type: TP
 #: data/man/po-translate.1:115
 #, no-wrap
 msgid "B<0>"
-msgstr ""
+msgstr "B<0>"
 
 #. type: Plain text
 #: data/man/po-translate.1:118
 msgid "All entries translated successfully."
-msgstr ""
+msgstr "Alla poster har översatts utan problem."
 
 #. type: TP
 #: data/man/po-translate.1:118
 #, no-wrap
 msgid "B<1>"
-msgstr ""
+msgstr "B<1>"
 
 #. type: Plain text
 #: data/man/po-translate.1:121
 msgid "Some entries failed to translate (partial success)."
-msgstr ""
+msgstr "Vissa poster kunde inte översättas (delvis framgång)."
 
 #. type: TP
 #: data/man/po-translate.1:121
 #, no-wrap
 msgid "B<2>"
-msgstr ""
+msgstr "B<2>"
 
 #. type: Plain text
 #: data/man/po-translate.1:124
 msgid "Usage error (invalid arguments, missing required options)."
-msgstr ""
+msgstr "Användningsfel (ogiltiga argument, saknade obligatoriska flaggor)."
 
 #. type: SH
 #: data/man/po-translate.1:124
@@ -465,107 +504,107 @@ msgstr "EXEMPEL"
 #. type: Plain text
 #: data/man/po-translate.1:126
 msgid "Translate all PO files using the free Lingva service:"
-msgstr ""
+msgstr "Översätt alla PO-filer med hjälp av den kostnadsfria tjänsten Lingva:"
 
 #. type: Plain text
 #: data/man/po-translate.1:130
 #, no-wrap
 msgid "po-translate -s en -t sv po/\n"
-msgstr ""
+msgstr "po-translate -s en -t sv po/\n"
 
 #. type: Plain text
 #: data/man/po-translate.1:134
 msgid "Use DeepL with an API key:"
-msgstr ""
+msgstr "Använd DeepL med en API-nyckel:"
 
 #. type: Plain text
 #: data/man/po-translate.1:138
 #, no-wrap
 msgid "po-translate -s en -t de --service deepl --api-key YOUR_KEY po/\n"
-msgstr ""
+msgstr "po-translate -s en -t de --service deepl --api-key DIN_NYCKEL po/\n"
 
 #. type: Plain text
 #: data/man/po-translate.1:142
 msgid "Translate with a custom glossary:"
-msgstr ""
+msgstr "Översätt med en anpassad ordlista:"
 
 #. type: Plain text
 #: data/man/po-translate.1:146
 #, no-wrap
 msgid "po-translate -s en -t sv --glossary terms.csv myapp.po\n"
-msgstr ""
+msgstr "po-translate -s en -t sv --glossary terms.csv myapp.po\n"
 
 #. type: Plain text
 #: data/man/po-translate.1:150
 msgid "Dry-run with JSON output:"
-msgstr ""
+msgstr "Testkörning med JSON-utdata:"
 
 #. type: Plain text
 #: data/man/po-translate.1:154
 #, no-wrap
 msgid "po-translate -s en -t sv --dry-run --json po/sv.po\n"
-msgstr ""
+msgstr "po-translate -s en -t sv --dry-run --json po/sv.po\n"
 
 #. type: Plain text
 #: data/man/po-translate.1:158
 msgid "Use OpenAI GPT-4 for high-quality translations:"
-msgstr ""
+msgstr "Använd OpenAI GPT-4 för högkvalitativa översättningar:"
 
 #. type: Plain text
 #: data/man/po-translate.1:162
 #, no-wrap
 msgid "po-translate -s en -t sv --service openai --model gpt-4o --api-key $OPENAI_API_KEY po/\n"
-msgstr ""
+msgstr "po-translate -s en -t sv --service openai --model gpt-4o --api-key $OPENAI_API_KEY po/\n"
 
 #. type: SH
 #: data/man/po-translate.1:164
 #, no-wrap
 msgid "ENVIRONMENT"
-msgstr ""
+msgstr "MILJÖ"
 
 #. type: TP
 #: data/man/po-translate.1:165
 #, no-wrap
 msgid "B<DEEPL_API_KEY>"
-msgstr ""
+msgstr "B<DEEPL_API_KEY>"
 
 #. type: Plain text
 #: data/man/po-translate.1:168
 msgid "API key for DeepL translation service."
-msgstr ""
+msgstr "API-nyckel för DeepL-översättningstjänst."
 
 #. type: TP
 #: data/man/po-translate.1:168
 #, no-wrap
 msgid "B<OPENAI_API_KEY>"
-msgstr ""
+msgstr "B<OPENAI_API_KEY>"
 
 #. type: Plain text
 #: data/man/po-translate.1:171
 msgid "API key for OpenAI."
-msgstr ""
+msgstr "API-nyckel för OpenAI."
 
 #. type: TP
 #: data/man/po-translate.1:171
 #, no-wrap
 msgid "B<ANTHROPIC_API_KEY>"
-msgstr ""
+msgstr "B<ANTHROPIC_API_KEY>"
 
 #. type: Plain text
 #: data/man/po-translate.1:174
 msgid "API key for Anthropic Claude."
-msgstr ""
+msgstr "API-nyckel för Anthropic Claude."
 
 #. type: TP
 #: data/man/po-translate.1:174
 #, no-wrap
 msgid "B<GOOGLE_API_KEY>"
-msgstr ""
+msgstr "B<GOOGLE_API_KEY>"
 
 #. type: Plain text
 #: data/man/po-translate.1:177
 msgid "API key for Google Cloud Translation."
-msgstr ""
+msgstr "API-nyckel för Google Cloud Translation."
 
 #. type: SH
 #: data/man/po-translate.1:177
@@ -576,7 +615,7 @@ msgstr "SE ÄVEN"
 #. type: Plain text
 #: data/man/po-translate.1:182
 msgid "B<l10n-lint>(1), B<tp-lint>(1), B<po-diff>(1), B<msgmerge>(1)"
-msgstr ""
+msgstr "B<l10n-lint>(1), B<tp-lint>(1), B<po-diff>(1), B<msgmerge>(1)"
 
 #. type: SH
 #: data/man/po-translate.1:182
@@ -598,15 +637,15 @@ msgstr "BUGGAR"
 #. type: Plain text
 #: data/man/po-translate.1:186
 msgid "Report bugs at: https://github.com/yeager/po-translate/issues"
-msgstr ""
+msgstr "Rapportera buggar på: https://github.com/yeager/po-translate/issues"
 
 #. type: SH
 #: data/man/po-translate.1:186
 #, no-wrap
 msgid "COPYRIGHT"
-msgstr ""
+msgstr "UPPHOVSRÄTT"
 
 #. type: Plain text
 #: data/man/po-translate.1:187
 msgid "Copyright \\(co 2026 Daniel Nylander. License: GPL-3.0-or-later."
-msgstr ""
+msgstr "Copyright \\(co 2026 Daniel Nylander. Licens: GPL-3.0-eller-senare."
