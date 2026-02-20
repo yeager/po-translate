@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zscaler — Real-Time Global Threat Activity</title>
+<script src="https://unpkg.com/globe.gl"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --blue:#0076be;--cyan:#00e5ff;--red:#ff3355;
+  --orange:#ff8800;--green:#00dd77;--purple:#8855ff;
+  --dark:#040a16;--card:rgba(8,20,40,0.85);
+}
+html,body{
+  font-family:'Inter',sans-serif;
+  background:var(--dark);color:#fff;
+  overflow:hidden;width:100vw;height:100vh;
+}
+
+/* BG */
+canvas#particles{position:fixed;inset:0;z-index:0;}
+.vignette{position:fixed;inset:0;z-index:5;background:radial-gradient(ellipse at center,transparent 40%,rgba(4,10,22,0.7) 100%);pointer-events:none;}
+
+/* HEADER */
+.header{
+  position:fixed;top:0;left:0;right:0;height:72px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 48px;z-index:200;
+  background:linear-gradient(180deg,rgba(4,10,22,0.97) 60%,transparent 100%);
+}
+.logo-area{display:flex;align-items:center;gap:16px;}
+.logo-area img{height:44px;}
+.logo-sep{width:2px;height:32px;background:rgba(255,255,255,0.12);border-radius:1px;}
+.logo-sub{font-size:22px;font-weight:600;color:rgba(255,255,255,0.5);letter-spacing:4px;text-transform:uppercase;}
+.live-pill{
+  display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;
+  color:var(--red);letter-spacing:4px;text-transform:uppercase;
+}
+.live-pill::before{content:'';width:12px;height:12px;background:var(--red);border-radius:50%;box-shadow:0 0 14px var(--red);animation:blink 1.5s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+#clock{font-size:20px;color:rgba(255,255,255,0.35);font-variant-numeric:tabular-nums;font-weight:500;}
+
+/* SLIDES */
+.slides{position:fixed;top:0;left:0;right:0;bottom:0;z-index:10;}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;visibility:hidden;transition:opacity 1.2s ease,visibility 0s 1.2s;pointer-events:none;
+  padding:80px 60px 72px;
+}
+.slide.active{opacity:1;visibility:visible;transition:opacity 1.2s ease,visibility 0s 0s;pointer-events:auto;}
+
+/* SLIDE TITLE */
+.slide-title{
+  font-size:22px;letter-spacing:8px;text-transform:uppercase;
+  color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:24px;
+  width:100%;text-align:center;
+}
+.slide-title span{color:var(--cyan);}
+
+/* ===== SLIDE 1: HERO ===== */
+.hero-num{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:min(220px,20vw);font-weight:700;line-height:1;
+  background:linear-gradient(135deg,var(--cyan),var(--blue),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 80px rgba(0,229,255,0.3));
+}
+.hero-label{
+  font-size:min(52px,4.5vw);font-weight:300;color:rgba(255,255,255,0.55);
+  margin-top:12px;letter-spacing:8px;text-transform:uppercase;
+}
+.hero-sub{
+  font-size:min(26px,2.5vw);color:rgba(255,255,255,0.35);margin-top:24px;
+  max-width:900px;text-align:center;line-height:1.7;
+}
+.hero-stats{
+  display:flex;gap:60px;margin-top:48px;
+}
+.hs-item{text-align:center;}
+.hs-num{font-family:'Space Grotesk';font-size:56px;font-weight:700;}
+.hs-label{font-size:16px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:2px;margin-top:4px;}
+
+/* ===== SLIDE 2: MEGA STATS 4-COL ===== */
+.mega-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:20px;
+  width:100%;flex:1;
+}
+.mega-card{
+  background:var(--card);border:1px solid rgba(0,118,190,0.08);
+  border-radius:20px;padding:32px;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;position:relative;overflow:hidden;
+}
+.mega-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  border-radius:20px 20px 0 0;
+}
+.mega-icon{font-size:52px;margin-bottom:12px;}
+.mega-num{font-family:'Space Grotesk';font-size:min(64px,5vw);font-weight:700;line-height:1;}
+.mega-label{font-size:18px;color:rgba(255,255,255,0.4);margin-top:8px;text-transform:uppercase;letter-spacing:2px;font-weight:600;}
+.mega-trend{font-size:16px;margin-top:8px;font-weight:700;}
+.mega-trend.up{color:var(--red);}
+.mega-trend.down{color:var(--green);}
+
+/* ===== SLIDE 3: CHARTS ===== */
+.charts-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:20px;width:100%;flex:1;min-height:400px;
+}
+.chart-card{
+  background:var(--card);border:1px solid rgba(0,118,190,0.08);
+  border-radius:20px;padding:28px;display:flex;flex-direction:column;
+}
+.chart-title{font-size:18px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:16px;}
+.chart-wrap{flex:1;position:relative;min-height:200px;}
+
+/* ===== SLIDE 4: BARS ===== */
+.bars-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;width:100%;flex:1;}
+.bars-card{background:var(--card);border:1px solid rgba(0,118,190,0.08);border-radius:20px;padding:32px;display:flex;flex-direction:column;}
+.bars-title{font-size:20px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:20px;}
+.bar-r{display:flex;align-items:center;margin-bottom:14px;gap:14px;}
+.bar-l{width:210px;font-size:18px;text-align:right;color:rgba(255,255,255,0.55);font-weight:500;}
+.bar-t{flex:1;height:32px;background:rgba(255,255,255,0.04);border-radius:6px;overflow:hidden;}
+.bar-f{height:100%;border-radius:6px;transition:width 2s cubic-bezier(0.22,1,0.36,1);width:0;}
+.bar-v{width:80px;font-size:18px;font-weight:700;color:rgba(255,255,255,0.5);}
+
+/* ===== SLIDE 5: GLOBE ===== */
+.globe-slide{flex-direction:row!important;gap:24px;}
+.globe-center{flex:1;display:flex;align-items:center;justify-content:center;position:relative;}
+.globe-side{width:260px;display:flex;flex-direction:column;gap:16px;justify-content:center;}
+.globe-card{
+  background:var(--card);border:1px solid rgba(0,118,190,0.08);
+  border-radius:16px;padding:20px;text-align:center;
+}
+.globe-card .big{font-family:'Space Grotesk';font-size:48px;font-weight:700;}
+.globe-card .sub{font-size:15px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:2px;margin-top:4px;}
+.globe-card .emoji{font-size:36px;margin:6px 0;}
+
+/* ===== SLIDE 6: LIVE FEED ===== */
+.feed-wrap{
+  flex:1;background:var(--card);border:1px solid rgba(0,118,190,0.08);
+  border-radius:20px;overflow:hidden;padding:4px 0;width:100%;
+}
+.feed-row{
+  display:flex;align-items:center;padding:14px 36px;gap:18px;
+  border-bottom:1px solid rgba(255,255,255,0.03);
+  animation:rowIn 0.4s ease forwards;opacity:0;
+}
+@keyframes rowIn{to{opacity:1;}}
+.sev{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.sev-c{background:var(--red);box-shadow:0 0 14px var(--red);}
+.sev-h{background:var(--orange);box-shadow:0 0 8px var(--orange);}
+.sev-m{background:#ffcc00;}
+.sev-l{background:var(--green);}
+.f-flag{font-size:28px;width:40px;text-align:center;}
+.f-type{font-weight:700;width:220px;font-size:20px;}
+.f-detail{flex:1;color:rgba(255,255,255,0.35);font-size:18px;font-family:'Space Grotesk',monospace;}
+.f-blocked{color:var(--green);font-weight:800;font-size:16px;letter-spacing:2px;}
+.f-time{font-size:17px;color:rgba(255,255,255,0.2);width:80px;text-align:right;font-variant-numeric:tabular-nums;}
+
+/* ===== SLIDE 7: ZERO TRUST ===== */
+.zt-layout{display:grid;grid-template-columns:1fr 1fr;gap:24px;width:100%;flex:1;}
+.zt-left{display:flex;flex-direction:column;justify-content:center;}
+.zt-tagline{
+  font-family:'Space Grotesk';font-size:min(90px,7vw);font-weight:700;line-height:1.1;
+  background:linear-gradient(135deg,#fff 30%,rgba(255,255,255,0.4));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.zt-sub{font-size:24px;color:rgba(255,255,255,0.35);margin-top:20px;line-height:1.7;max-width:560px;}
+.zt-right{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.zt-box{
+  background:var(--card);border:1px solid rgba(0,118,190,0.08);
+  border-radius:16px;padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+}
+.zt-box .num{font-family:'Space Grotesk';font-size:52px;font-weight:700;}
+.zt-box .lbl{font-size:15px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:2px;margin-top:6px;}
+
+/* ===== SLIDE 8: AI DEFENSE ===== */
+.ai-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:100%;flex:1;}
+.ai-card{
+  background:var(--card);border:1px solid rgba(0,118,190,0.08);
+  border-radius:20px;padding:28px;display:flex;flex-direction:column;
+}
+.ai-card-title{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:12px;}
+.ai-big{font-family:'Space Grotesk';font-size:64px;font-weight:700;line-height:1;}
+.ai-pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;}
+.ai-pill{background:rgba(255,136,0,0.08);border:1px solid rgba(255,136,0,0.15);padding:6px 14px;border-radius:24px;font-size:13px;font-weight:500;}
+.gauge-wrap{width:160px;height:160px;margin:auto;position:relative;}
+.gauge-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.gauge-label .g-num{font-family:'Space Grotesk';font-size:42px;font-weight:700;}
+.gauge-label .g-sub{font-size:11px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;}
+
+/* TICKER */
+.ticker{
+  position:fixed;bottom:0;left:0;right:0;height:64px;
+  background:rgba(4,10,22,0.97);border-top:1px solid rgba(0,118,190,0.12);
+  display:flex;align-items:center;z-index:200;overflow:hidden;
+}
+.ticker-scroll{display:flex;animation:scroll 60s linear infinite;white-space:nowrap;}
+@keyframes scroll{to{transform:translateX(-50%);}}
+.ticker-item{padding:0 40px;font-size:22px;font-weight:500;color:rgba(255,255,255,0.4);}
+.ticker-item strong{color:var(--cyan);}
+.ticker-item .warn{color:var(--red);font-weight:700;}
+.ticker-dot{color:rgba(0,118,190,0.2);padding:0 12px;font-size:18px;}
+
+/* INDICATORS */
+.indicators{
+  position:fixed;bottom:66px;left:50%;transform:translateX(-50%);
+  display:flex;gap:8px;z-index:200;
+}
+.ind{width:28px;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;transition:all 0.6s;}
+.ind.on{background:var(--cyan);width:48px;}
+
+/* PROGRESS BAR */
+.slide-progress{
+  position:fixed;top:72px;left:0;right:0;height:2px;z-index:200;
+  background:rgba(255,255,255,0.03);
+}
+.slide-progress-bar{height:100%;background:linear-gradient(90deg,var(--cyan),var(--blue));width:0;transition:width 0.3s linear;}
+</style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+<div class="vignette"></div>
+
+<div class="header">
+  <div class="logo-area">
+    <img src="zscaler-logo.svg" alt="Zscaler" onerror="this.style.display='none'" />
+    <div class="logo-sep"></div>
+    <div class="logo-sub">Real-Time Global Threat Activity</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:24px;">
+    <div class="live-pill">LIVE THREAT MONITOR</div>
+    <div id="clock"></div>
+  </div>
+</div>
+
+<div class="slide-progress"><div class="slide-progress-bar" id="progressBar"></div></div>
+
+<div class="slides">
+
+  <!-- SLIDE 1: HERO -->
+  <div class="slide active" id="s1">
+    <div class="hero-num" id="hero-counter">0</div>
+    <div class="hero-label">Threats Blocked Today</div>
+    <div class="hero-sub">Zscaler's AI-powered Zero Trust Exchange processes <strong style="color:var(--cyan)">500+ billion</strong> transactions daily — the world's largest inline security cloud.</div>
+    <div class="hero-stats">
+      <div class="hs-item"><div class="hs-num" style="color:var(--cyan);">500B+</div><div class="hs-label">Daily Transactions</div></div>
+      <div class="hs-item"><div class="hs-num" style="color:var(--green);">7,700+</div><div class="hs-label">Enterprise Customers</div></div>
+      <div class="hs-item"><div class="hs-num" style="color:var(--orange);">150+</div><div class="hs-label">Data Centers</div></div>
+      <div class="hs-item"><div class="hs-num" style="color:var(--purple);">45M+</div><div class="hs-label">Users Protected</div></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: MEGA STATS -->
+  <div class="slide" id="s2">
+    <div class="slide-title">⚡ <span>Today's Threat Landscape</span> — Live Numbers</div>
+    <div class="mega-grid">
+      <div class="mega-card" style="--c:var(--red);">
+        <div class="mega-icon">🦠</div>
+        <div class="mega-num" style="color:var(--red);" data-counter="284591">0</div>
+        <div class="mega-label">Malware Stopped</div>
+        <div class="mega-trend up">↑ 8.7% vs yesterday</div>
+      </div>
+      <div class="mega-card">
+        <div class="mega-icon">🎣</div>
+        <div class="mega-num" style="color:var(--orange);" data-counter="1523847">0</div>
+        <div class="mega-label">Phishing Blocked</div>
+        <div class="mega-trend up">↑ 15.2% — AI phishing surging</div>
+      </div>
+      <div class="mega-card">
+        <div class="mega-icon">💀</div>
+        <div class="mega-num" style="color:var(--purple);" data-counter="18472">0</div>
+        <div class="mega-label">Ransomware Prevented</div>
+        <div class="mega-trend up">↑ LockBit 4.0 active</div>
+      </div>
+      <div class="mega-card">
+        <div class="mega-icon">📡</div>
+        <div class="mega-num" style="color:var(--cyan);" data-counter="47293">0</div>
+        <div class="mega-label">C2 Callbacks Blocked</div>
+        <div class="mega-trend down">Botnet traffic intercepted</div>
+      </div>
+      <div class="mega-card">
+        <div class="mega-icon">🕵️</div>
+        <div class="mega-num" style="color:#ffcc00;" data-counter="1847">0</div>
+        <div class="mega-label">Zero-Day Exploits</div>
+        <div class="mega-trend down">AI sandbox detected</div>
+      </div>
+      <div class="mega-card">
+        <div class="mega-icon">🔐</div>
+        <div class="mega-num" style="color:var(--green);">94.8%</div>
+        <div class="mega-label">Encrypted Traffic</div>
+        <div class="mega-trend down">Full SSL/TLS inspection</div>
+      </div>
+      <div class="mega-card">
+        <div class="mega-icon">🌐</div>
+        <div class="mega-num" style="color:var(--blue);" data-counter="22847">0</div>
+        <div class="mega-label">DNS Tunneling</div>
+        <div class="mega-trend up">↑ Data exfil attempts</div>
+      </div>
+      <div class="mega-card">
+        <div class="mega-icon">⛏️</div>
+        <div class="mega-num" style="color:var(--orange);" data-counter="198420">0</div>
+        <div class="mega-label">Cryptominers Killed</div>
+        <div class="mega-trend down">CPU theft prevented</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: CHARTS -->
+  <div class="slide" id="s3">
+    <div class="slide-title">📊 <span>Threat Analytics</span> — 7 Day Trend</div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Attacks Blocked Per Hour (24h)</div>
+        <div class="chart-wrap"><canvas id="chartLine"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Threat Distribution</div>
+        <div class="chart-wrap"><canvas id="chartDonut"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Ransomware Families — This Week</div>
+        <div class="chart-wrap"><canvas id="chartRansom"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Attack Source Countries</div>
+        <div class="chart-wrap"><canvas id="chartGeo"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: BARS -->
+  <div class="slide" id="s4">
+    <div class="slide-title">🎯 <span>Top Categories</span> — Last 24 Hours</div>
+    <div class="bars-grid">
+      <div class="bars-card">
+        <div class="bars-title">Attack Types</div>
+        <div id="attack-bars"></div>
+      </div>
+      <div class="bars-card">
+        <div class="bars-title">Most Targeted Industries</div>
+        <div id="industry-bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: GLOBE -->
+  <div class="slide globe-slide" id="s5">
+    <div class="globe-side">
+      <div class="globe-card">
+        <div class="sub">Top Attacker</div>
+        <div class="emoji">🇨🇳</div>
+        <div class="big" style="color:var(--red);">23%</div>
+        <div class="sub">of all attacks</div>
+      </div>
+      <div class="globe-card">
+        <div class="sub">Most Targeted</div>
+        <div class="emoji">🇺🇸</div>
+        <div class="big" style="color:var(--orange);">31%</div>
+        <div class="sub">of all targets</div>
+      </div>
+      <div class="globe-card">
+        <div class="sub">Active Right Now</div>
+        <div class="big" style="color:var(--cyan);">47</div>
+        <div class="sub">Attack campaigns</div>
+      </div>
+    </div>
+    <div class="globe-center">
+      <div id="globeViz" style="width:100%;height:100%;"></div>
+    </div>
+    <div class="globe-side">
+      <div class="globe-card">
+        <div class="sub">Attacks Per Second</div>
+        <div class="big" style="color:var(--red);" id="aps">0</div>
+      </div>
+      <div class="globe-card">
+        <div class="sub">Countries Affected</div>
+        <div class="big" style="color:var(--green);">185+</div>
+      </div>
+      <div class="globe-card">
+        <div class="sub">Data Centers</div>
+        <div class="big" style="color:var(--blue);">150+</div>
+        <div class="sub">Global Zero Trust Edge</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5b: WORK FROM ANYWHERE -->
+  <div class="slide" id="s5b" style="align-items:stretch;">
+    <div class="slide-title">🌍 <span>Work From Anywhere</span> — Remote vs In-Office Trends</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;width:90%;max-width:1400px;margin:24px auto 0;">
+      <div style="background:var(--card);border-radius:16px;padding:32px;">
+        <div style="font-size:14px;letter-spacing:4px;text-transform:uppercase;color:var(--cyan);margin-bottom:20px;font-weight:700;">Remote User Traffic</div>
+        <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:16px;">
+          <div style="font-family:'Space Grotesk';font-size:72px;font-weight:800;color:var(--cyan);" data-counter="61" data-suffix="%">0</div>
+          <div style="font-size:18px;color:rgba(255,255,255,0.5);">Feb 2026 avg</div>
+        </div>
+        <div style="font-size:15px;color:rgba(255,255,255,0.6);line-height:1.6;">Up from <strong style="color:var(--orange);">49%</strong> in Jan 2026. The shift to remote work continues to accelerate across enterprise customers worldwide.</div>
+        <div style="margin-top:24px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:6px;"><span>Q1 2020</span><span>Q1 2026</span></div>
+          <div style="height:32px;background:rgba(255,255,255,0.05);border-radius:8px;overflow:hidden;position:relative;">
+            <div style="height:100%;width:61%;background:linear-gradient(90deg,#0076be,#00e5ff);border-radius:8px;transition:width 2s ease-out;" data-width="61%"></div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--card);border-radius:16px;padding:32px;">
+        <div style="font-size:14px;letter-spacing:4px;text-transform:uppercase;color:var(--orange);margin-bottom:20px;font-weight:700;">Key Insights</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;text-align:center;">
+            <div style="font-family:'Space Grotesk';font-size:36px;font-weight:700;color:var(--green);" data-counter="140" data-suffix="B">0</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;">Daily Transactions</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;text-align:center;">
+            <div style="font-family:'Space Grotesk';font-size:36px;font-weight:700;color:var(--purple);" data-counter="185" data-suffix="+">0</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;">Countries Monitored</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;text-align:center;">
+            <div style="font-family:'Space Grotesk';font-size:36px;font-weight:700;color:var(--red);" data-counter="39" data-suffix="%">0</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;">Still In-Office Only</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;text-align:center;">
+            <div style="font-family:'Space Grotesk';font-size:36px;font-weight:700;color:var(--cyan);" data-counter="3" data-suffix="x">0</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;">Growth Since 2020</div>
+          </div>
+        </div>
+        <div style="margin-top:20px;font-size:13px;color:rgba(255,255,255,0.4);text-align:center;">
+          Top remote traffic: 🇺🇸 US · 🇬🇧 UK · 🇩🇪 Germany · 🇮🇳 India · 🇯🇵 Japan
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px;font-size:12px;color:rgba(255,255,255,0.25);text-align:center;">Source: Zscaler Cloud — threatlabz.zscaler.com/cloud-insights/work-from-anywhere-dashboard</div>
+  </div>
+
+  <!-- SLIDE 6: LIVE FEED -->
+  <div class="slide" id="s6" style="align-items:stretch;">
+    <div class="slide-title">⚡ <span>Live Threat Feed</span> — Attacks Blocked in Real Time</div>
+    <div class="feed-wrap" id="feed"></div>
+  </div>
+
+  <!-- SLIDE 7: ZERO TRUST + PLATFORM IMAGE -->
+  <div class="slide" id="s7">
+    <div class="zt-layout">
+      <div class="zt-left">
+        <div style="font-size:16px;letter-spacing:6px;text-transform:uppercase;color:var(--cyan);font-weight:700;margin-bottom:16px;">Zero Trust Exchange™ Platform</div>
+        <div class="zt-tagline">Never trust.<br>Always verify.</div>
+        <div class="zt-sub">The internet is the new corporate network. Zscaler connects users directly to applications — never the network — making your attack surface invisible.</div>
+        <img id="zte-rotate" src="img/zte-diagram.jpg" style="width:100%;max-width:440px;border-radius:12px;margin-top:20px;opacity:0.85;transition:opacity 1s;" alt="ZTE Architecture" />
+      </div>
+      <div class="zt-right">
+        <div class="zt-box"><div class="num" style="color:var(--cyan);">99.999%</div><div class="lbl">Uptime SLA</div></div>
+        <div class="zt-box"><div class="num" style="color:var(--green);">&lt; 5ms</div><div class="lbl">Avg Latency</div></div>
+        <div class="zt-box"><div class="num" style="color:var(--orange);" data-counter="45000000" data-suffix="+">0</div><div class="lbl">Users Protected</div></div>
+        <div class="zt-box"><div class="num" style="color:var(--purple);">Forbes 2000</div><div class="lbl">~45% are customers</div></div>
+        <div class="zt-box"><div class="num" style="color:var(--red);">0</div><div class="lbl">Attack Surface</div></div>
+        <div class="zt-box">
+          <div class="num" style="color:var(--blue);">Leader</div>
+          <div class="lbl">Gartner MQ SSE 2025</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7b: PLATFORM OVERVIEW -->
+  <div class="slide" id="s7b" style="background:linear-gradient(135deg,rgba(0,40,80,0.3),rgba(0,10,30,0.9));align-items:stretch;">
+    <div class="slide-title">🛡️ <span>Zero Trust Exchange</span> — World's Largest Inline Security Cloud</div>
+    <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:24px;flex:1;width:100%;">
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="background:var(--card);border-radius:20px;padding:28px;flex:1;display:flex;align-items:center;justify-content:center;">
+          <img src="img/zte-platform.jpg" style="width:100%;border-radius:12px;" alt="ZTE Platform" />
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="zt-box" style="background:var(--card);border:1px solid rgba(0,118,190,0.08);">
+          <img src="img/stop-cyber.png" style="width:48px;height:48px;margin-bottom:8px;filter:brightness(2);" />
+          <div class="num" style="color:var(--red);font-size:36px;">9B+</div>
+          <div class="lbl">Threats Blocked Daily</div>
+        </div>
+        <div class="zt-box" style="background:var(--card);border:1px solid rgba(0,118,190,0.08);">
+          <img src="img/secure-ai.png" style="width:48px;height:48px;margin-bottom:8px;filter:brightness(2);" />
+          <div class="num" style="color:var(--cyan);font-size:36px;">500T+</div>
+          <div class="lbl">Daily Intelligence Signals</div>
+        </div>
+        <div class="zt-box" style="background:var(--card);border:1px solid rgba(0,118,190,0.08);">
+          <img src="img/secure-data.png" style="width:48px;height:48px;margin-bottom:8px;filter:brightness(2);" />
+          <div class="num" style="color:var(--green);font-size:36px;">160+</div>
+          <div class="lbl">Global Data Centers</div>
+        </div>
+        <div class="zt-box" style="background:var(--card);border:1px solid rgba(0,118,190,0.08);">
+          <img src="img/ico-protect.png" style="width:48px;height:48px;margin-bottom:8px;filter:brightness(2);" />
+          <div class="num" style="color:var(--orange);font-size:36px;">400+</div>
+          <div class="lbl">Technology Patents</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9b: TRUSTED BY -->
+  <div class="slide" id="s9b" style="background:linear-gradient(180deg,rgba(0,30,60,0.2),rgba(0,5,15,0.8));">
+    <div class="slide-title">🏢 <span>Trusted by the World's Largest Enterprises</span></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;width:100%;max-width:1200px;margin-top:20px;">
+      <div style="background:var(--card);border:1px solid rgba(0,118,190,0.08);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;">
+        <img src="img/customer-siemens.jpg" style="width:100%;height:180px;object-fit:cover;" />
+        <div style="padding:20px;text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <img src="img/siemens-logo.png" style="height:28px;margin-bottom:8px;" />
+          <div style="font-size:12px;color:rgba(255,255,255,0.35);">Global Manufacturing</div>
+        </div>
+      </div>
+      <div style="background:var(--card);border:1px solid rgba(0,118,190,0.08);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;">
+        <img src="img/customer-united.jpg" style="width:100%;height:180px;object-fit:cover;" />
+        <div style="padding:20px;text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <img src="img/united-logo.png" style="height:28px;margin-bottom:8px;" />
+          <div style="font-size:12px;color:rgba(255,255,255,0.35);">Aviation & Travel</div>
+        </div>
+      </div>
+      <div style="background:var(--card);border:1px solid rgba(0,118,190,0.08);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;">
+        <img src="img/customer-mgm.jpg" style="width:100%;height:180px;object-fit:cover;" />
+        <div style="padding:20px;text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <img src="img/mgm-logo.png" style="height:28px;margin-bottom:8px;" />
+          <div style="font-size:12px;color:rgba(255,255,255,0.35);">Hospitality & Entertainment</div>
+        </div>
+      </div>
+      <div style="background:var(--card);border:1px solid rgba(0,118,190,0.08);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;">
+        <div style="width:100%;height:180px;background:linear-gradient(135deg,#0a1628,#0d2240);display:flex;align-items:center;justify-content:center;">
+          <img src="img/gartner-sse.jpg" style="width:80%;border-radius:8px;" />
+        </div>
+        <div style="padding:20px;text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <div style="font-family:'Space Grotesk';font-size:24px;font-weight:700;color:var(--cyan);">Leader</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.35);">Gartner MQ for SSE 2025</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:32px;display:flex;gap:48px;align-items:center;">
+      <div style="text-align:center;"><div style="font-family:'Space Grotesk';font-size:48px;font-weight:700;color:var(--cyan);">~45%</div><div style="font-size:13px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:2px;">Fortune 500</div></div>
+      <div style="text-align:center;"><div style="font-family:'Space Grotesk';font-size:48px;font-weight:700;color:var(--green);">30%</div><div style="font-size:13px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:2px;">Forbes Global 2000</div></div>
+      <div style="text-align:center;"><div style="font-family:'Space Grotesk';font-size:48px;font-weight:700;color:var(--orange);">7,700+</div><div style="font-size:13px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:2px;">Enterprise Customers</div></div>
+      <div style="text-align:center;"><div style="font-family:'Space Grotesk';font-size:48px;font-weight:700;color:var(--purple);">&gt;70</div><div style="font-size:13px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:2px;">Net Promoter Score</div></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: AI DEFENSE -->
+  <div class="slide" id="s8" style="align-items:stretch;">
+    <div class="slide-title">🤖 <span>AI-Powered Defense</span> — Machine Learning at Cloud Scale</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;flex:1;width:100%;">
+      <!-- Left: Ransomware bars + sandbox -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="background:var(--card);border:1px solid rgba(0,118,190,0.08);border-radius:20px;padding:24px;flex:1;">
+          <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:12px;">Ransomware Families Blocked</div>
+          <div style="font-family:'Space Grotesk';font-size:52px;font-weight:700;color:var(--red);margin-bottom:16px;" data-counter="18472">0</div>
+          <div id="ai-ransom-bars"></div>
+        </div>
+        <div style="background:var(--card);border:1px solid rgba(0,118,190,0.08);border-radius:20px;padding:20px;display:flex;gap:16px;align-items:center;">
+          <img src="img/secure-ai.png" style="width:40px;height:40px;filter:brightness(2);" />
+          <div>
+            <div style="font-family:'Space Grotesk';font-size:28px;font-weight:700;color:var(--green);" data-counter="847291">0</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">Files Sandboxed Today</div>
+          </div>
+        </div>
+      </div>
+      <!-- Center: Radar chart + phishing gauge -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="background:var(--card);border:1px solid rgba(0,118,190,0.08);border-radius:20px;padding:24px;flex:1;display:flex;flex-direction:column;">
+          <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:8px;">AI Detection Coverage</div>
+          <div style="flex:1;position:relative;min-height:0;"><canvas id="chartRadar"></canvas></div>
+        </div>
+        <div style="background:var(--card);border:1px solid rgba(0,118,190,0.08);border-radius:20px;padding:20px;display:flex;align-items:center;gap:20px;">
+          <div class="gauge-wrap" style="width:100px;height:100px;"><canvas id="gaugePhish"></canvas><div class="gauge-label"><div class="g-num" style="color:var(--orange);font-size:28px;">97.8%</div><div class="g-sub" style="font-size:9px;">Catch</div></div></div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px;">Phishing Detection AI</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <span style="background:rgba(255,136,0,0.08);border:1px solid rgba(255,136,0,0.15);padding:3px 8px;border-radius:12px;font-size:10px;color:var(--orange);">Brand spoof</span>
+              <span style="background:rgba(255,136,0,0.08);border:1px solid rgba(255,136,0,0.15);padding:3px 8px;border-radius:12px;font-size:10px;color:var(--orange);">Credential theft</span>
+              <span style="background:rgba(255,136,0,0.08);border:1px solid rgba(255,136,0,0.15);padding:3px 8px;border-radius:12px;font-size:10px;color:var(--orange);">BEC</span>
+              <span style="background:rgba(255,136,0,0.08);border:1px solid rgba(255,136,0,0.15);padding:3px 8px;border-radius:12px;font-size:10px;color:var(--orange);">AI lures</span>
+              <span style="background:rgba(255,136,0,0.08);border:1px solid rgba(255,136,0,0.15);padding:3px 8px;border-radius:12px;font-size:10px;color:var(--orange);">QR phish</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Right: Stats grid + AI adoption chart -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="background:var(--card);border:1px solid rgba(0,118,190,0.08);border-radius:20px;padding:24px;flex:1;display:flex;flex-direction:column;">
+          <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:8px;">Enterprise AI Adoption Trend</div>
+          <div style="flex:1;position:relative;min-height:0;"><canvas id="chartAiTrend"></canvas></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="background:var(--card);border:1px solid rgba(0,118,190,0.08);border-radius:14px;padding:16px;text-align:center;">
+            <div style="font-family:'Space Grotesk';font-size:32px;font-weight:700;color:var(--cyan);">500T+</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">Daily Signals</div>
+          </div>
+          <div style="background:var(--card);border:1px solid rgba(0,118,190,0.08);border-radius:14px;padding:16px;text-align:center;">
+            <div style="font-family:'Space Grotesk';font-size:32px;font-weight:700;color:var(--blue);">250K</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">Updates / Day</div>
+          </div>
+          <div style="background:var(--card);border:1px solid rgba(0,118,190,0.08);border-radius:14px;padding:16px;text-align:center;">
+            <div style="font-family:'Space Grotesk';font-size:32px;font-weight:700;color:#ffcc00;">300+</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">Researchers</div>
+          </div>
+          <div style="background:var(--card);border:1px solid rgba(0,118,190,0.08);border-radius:14px;padding:16px;text-align:center;">
+            <div style="font-family:'Space Grotesk';font-size:32px;font-weight:700;color:var(--green);">40+</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">AI Models</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="indicators" id="inds"></div>
+
+<div class="ticker">
+  <div class="ticker-scroll" id="ticker"></div>
+</div>
+
+<script>
+// ===== PARTICLES =====
+const pc=document.getElementById('particles'),px=pc.getContext('2d');
+function resizeP(){pc.width=innerWidth*2;pc.height=innerHeight*2;pc.style.width=innerWidth+'px';pc.style.height=innerHeight+'px';}
+resizeP();addEventListener('resize',resizeP);
+const dots=Array.from({length:100},()=>({x:Math.random()*pc.width,y:Math.random()*pc.height,vx:(Math.random()-0.5)*0.5,vy:(Math.random()-0.5)*0.5,r:Math.random()*2+0.5}));
+function drawP(){px.clearRect(0,0,pc.width,pc.height);for(const d of dots){d.x+=d.vx;d.y+=d.vy;if(d.x<0)d.x=pc.width;if(d.x>pc.width)d.x=0;if(d.y<0)d.y=pc.height;if(d.y>pc.height)d.y=0;px.beginPath();px.arc(d.x,d.y,d.r,0,Math.PI*2);px.fillStyle='rgba(0,118,190,0.2)';px.fill();}for(let i=0;i<dots.length;i++)for(let j=i+1;j<dots.length;j++){const dx=dots[i].x-dots[j].x,dy=dots[i].y-dots[j].y,dist=Math.sqrt(dx*dx+dy*dy);if(dist<180){px.beginPath();px.moveTo(dots[i].x,dots[i].y);px.lineTo(dots[j].x,dots[j].y);px.strokeStyle=`rgba(0,118,190,${0.06*(1-dist/180)})`;px.lineWidth=1;px.stroke();}}requestAnimationFrame(drawP);}
+drawP();
+
+// ===== CLOCK =====
+setInterval(()=>{const n=new Date();document.getElementById('clock').textContent=n.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' — '+n.toLocaleTimeString('en-GB');},1000);
+
+// ===== COUNTERS =====
+function animC(el,target,sfx=''){const dur=2500,t0=performance.now();(function tick(now){const p=Math.min((now-t0)/dur,1),e=1-Math.pow(1-p,4),v=Math.floor(target*e);if(target>=1e9)el.textContent=(v/1e9).toFixed(0)+'B'+sfx;else if(target>=1e6)el.textContent=(v/1e6).toFixed(1)+'M'+sfx;else el.textContent=v.toLocaleString()+sfx;if(p<1)requestAnimationFrame(tick);})(performance.now());}
+
+// Hero counter — deterministic from time-of-day, animates up to current value in 5 seconds on each slide show
+// ~8.5B threats/day = ~98K/sec with sine wave for day pattern
+function getHeroTarget(){
+  const now=new Date(), midnight=new Date(now); midnight.setHours(0,0,0,0);
+  const secToday=(now-midnight)/1000;
+  const hourFrac=now.getHours()+now.getMinutes()/60;
+  const activityMul=0.7+0.3*Math.sin((hourFrac-6)*Math.PI/12);
+  return Math.floor(secToday*98379*activityMul);
+}
+let heroTarget=getHeroTarget(), heroDisplayed=0, heroAnimStart=null;
+const HERO_ANIM_DUR=5000;
+function heroFrame(ts){
+  if(!heroAnimStart) heroAnimStart=ts;
+  const el=document.getElementById('hero-counter');
+  if(!el){requestAnimationFrame(heroFrame);return;}
+  const p=Math.min((ts-heroAnimStart)/HERO_ANIM_DUR,1);
+  const ease=1-Math.pow(1-p,3); // ease-out cubic
+  heroDisplayed=Math.floor(heroTarget*ease);
+  el.textContent=heroDisplayed.toLocaleString();
+  if(p<1) requestAnimationFrame(heroFrame);
+}
+function startHeroAnim(){
+  heroTarget=getHeroTarget();
+  heroDisplayed=0;
+  heroAnimStart=null;
+  requestAnimationFrame(heroFrame);
+}
+startHeroAnim();
+
+// ===== SLIDES (FIRST — must not be blocked by chart/globe errors) =====
+const DURATION=8000,slides=document.querySelectorAll('.slide'),N=slides.length;
+let cur=0,slideStart=Date.now();
+const ic=document.getElementById('inds');
+for(let i=0;i<N;i++){const d=document.createElement('div');d.className='ind'+(i===0?' on':'');ic.appendChild(d);}
+function activateSlide(sl){
+  if(sl.id==='s1') startHeroAnim(); // re-animate hero counter each time
+  sl.querySelectorAll('[data-counter]').forEach(el=>animC(el,+el.dataset.counter,el.dataset.suffix||''));
+  sl.querySelectorAll('[data-width]').forEach((b,i)=>{b.style.transition='none';b.style.width='0';b.offsetHeight;b.style.transition='';setTimeout(()=>b.style.width=b.dataset.width,50+i*120);});
+  setTimeout(()=>{initCharts(sl);if(sl.id==='s5')initGlobe();},300);
+}
+function show(i){slides.forEach((s,j)=>s.classList.toggle('active',j===i));document.querySelectorAll('.ind').forEach((d,j)=>d.classList.toggle('on',j===i));activateSlide(slides[i]);slideStart=Date.now();}
+function nxt(){cur=(cur+1)%N;show(cur);}
+show(0);setInterval(nxt,DURATION);
+const pb=document.getElementById('progressBar');
+function updateProgress(){const elapsed=Date.now()-slideStart;pb.style.width=Math.min(100,elapsed/DURATION*100)+'%';requestAnimationFrame(updateProgress);}
+updateProgress();
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' ')nxt();if(e.key==='ArrowLeft'){cur=(cur-1+N)%N;show(cur);}if(e.key==='f')document.documentElement.requestFullscreen();});
+
+// ===== BARS =====
+function mkBars(id,data){document.getElementById(id).innerHTML=data.map(d=>`<div class="bar-r"><span class="bar-l">${d.l}</span><div class="bar-t"><div class="bar-f" style="background:${d.c};" data-width="${d.p}%"></div></div><span class="bar-v">${d.v}</span></div>`).join('');}
+mkBars('attack-bars',[
+  {l:'Phishing / Social Eng.',v:'1.52M',p:95,c:'#ff8800'},{l:'Malware / Ransomware',v:'284K',p:72,c:'#ff3355'},
+  {l:'Cryptomining',v:'198K',p:58,c:'#ffcc00'},{l:'C2 / Botnet',v:'47K',p:35,c:'#8855ff'},
+  {l:'Exploit Kits',v:'31K',p:28,c:'#0076be'},{l:'Data Exfiltration',v:'22K',p:22,c:'#00dd77'},
+  {l:'DNS Tunneling',v:'15K',p:16,c:'#00e5ff'},{l:'Living-off-the-Land',v:'9.2K',p:12,c:'#ff66aa'},
+  {l:'Supply Chain',v:'4.8K',p:8,c:'#aa88ff'},{l:'Zero-Day Exploits',v:'1.8K',p:6,c:'#ff4488'},
+]);
+mkBars('industry-bars',[
+  {l:'Manufacturing',v:'18.2%',p:91,c:'#ff3355'},{l:'Technology',v:'14.7%',p:74,c:'#0076be'},
+  {l:'Healthcare',v:'12.1%',p:61,c:'#00dd77'},{l:'Finance & Insurance',v:'10.8%',p:54,c:'#ffcc00'},
+  {l:'Education',v:'9.3%',p:47,c:'#8855ff'},{l:'Government',v:'7.6%',p:38,c:'#ff8800'},
+  {l:'Retail & Wholesale',v:'6.4%',p:32,c:'#00e5ff'},{l:'Energy & Utilities',v:'5.1%',p:26,c:'#ff66aa'},
+  {l:'Transportation',v:'4.2%',p:21,c:'#88aaff'},{l:'Telecom',v:'3.8%',p:19,c:'#66ddaa'},
+]);
+mkBars('ai-ransom-bars',[
+  {l:'LockBit 4.0',v:'34%',p:85,c:'#ff3355'},{l:'BlackCat',v:'22%',p:55,c:'#ff8800'},
+  {l:'Cl0p',v:'16%',p:40,c:'#ffcc00'},{l:'Play',v:'11%',p:28,c:'#8855ff'},
+  {l:'Akira',v:'8%',p:20,c:'#00e5ff'},{l:'RansomHub',v:'5%',p:13,c:'#0076be'},
+  {l:'Other',v:'4%',p:10,c:'rgba(255,255,255,0.2)'},
+]);
+
+// ===== CHART.JS (lazy init) =====
+Chart.defaults.color='rgba(255,255,255,0.4)';
+Chart.defaults.borderColor='rgba(255,255,255,0.05)';
+Chart.defaults.font.family='Inter';
+const chartInited={};
+function initCharts(slideEl){
+  const id=slideEl.id;
+  if(chartInited[id])return;
+  try{
+  if(id==='s3'&&!chartInited[id]){
+    chartInited[id]=true;
+    const hours=Array.from({length:24},(_,i)=>i+':00');
+    new Chart(document.getElementById('chartLine'),{type:'line',data:{labels:hours,datasets:[{label:'Attacks Blocked',data:hours.map(()=>Math.floor(40000+Math.random()*60000)),borderColor:'#00e5ff',backgroundColor:'rgba(0,229,255,0.08)',fill:true,tension:0.4,pointRadius:0,borderWidth:2},{label:'Malware',data:hours.map(()=>Math.floor(8000+Math.random()*15000)),borderColor:'#ff3355',backgroundColor:'rgba(255,51,85,0.05)',fill:true,tension:0.4,pointRadius:0,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:13},padding:16}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},maxTicksLimit:12}},y:{ticks:{font:{size:11},callback:v=>v>=1000?(v/1000)+'K':v}}}}});
+    new Chart(document.getElementById('chartDonut'),{type:'doughnut',data:{labels:['Phishing','Malware','Cryptomining','C2/Botnet','Exploits','DNS Tunnel','Other'],datasets:[{data:[38,18,12,8,6,4,14],backgroundColor:['#ff8800','#ff3355','#ffcc00','#8855ff','#0076be','#00e5ff','rgba(255,255,255,0.1)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'right',labels:{font:{size:14},padding:14,usePointStyle:true,pointStyleWidth:16}}}}});
+    new Chart(document.getElementById('chartRansom'),{type:'bar',data:{labels:['LockBit 4.0','BlackCat','Cl0p','Play','Akira','RansomHub','Medusa','8Base'],datasets:[{data:[34,22,16,11,8,5,3,1],backgroundColor:['#ff3355','#ff8800','#ffcc00','#8855ff','#00e5ff','#0076be','#00dd77','rgba(255,255,255,0.15)'],borderWidth:0,borderRadius:6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>v+'%',font:{size:12}},grid:{color:'rgba(255,255,255,0.03)'}},y:{ticks:{font:{size:13,weight:'600'}},grid:{display:false}}}}});
+    new Chart(document.getElementById('chartGeo'),{type:'bar',data:{labels:['🇨🇳 China','🇷🇺 Russia','🇮🇷 Iran','🇰🇵 N. Korea','🇻🇳 Vietnam','🇧🇷 Brazil','🇳🇬 Nigeria','🇮🇳 India','🇺🇸 USA','🇹🇷 Turkey'],datasets:[{data:[23,18,12,8,7,6,5,5,4,3],backgroundColor:['#ff335588','#ff880088','#ffcc0088','#8855ff88','#00e5ff88','#00dd7788','#0076be88','#ff66aa88','#ffffff22','#aa88ff88'],borderWidth:0,borderRadius:6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>v+'%',font:{size:12}},grid:{color:'rgba(255,255,255,0.03)'}},y:{ticks:{font:{size:14}},grid:{display:false}}}}});
+  }
+  if(id==='s8'){
+    chartInited[id]=true;
+    if(document.getElementById('gaugePhish'))
+      new Chart(document.getElementById('gaugePhish'),{type:'doughnut',data:{datasets:[{data:[97.8,2.2],backgroundColor:['#ff8800','rgba(255,255,255,0.04)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:true,rotation:-90,circumference:180,cutout:'80%',plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+    if(document.getElementById('chartRadar'))
+      new Chart(document.getElementById('chartRadar'),{type:'radar',data:{labels:['Malware','Phishing','Ransomware','C2/Botnet','Zero-Day','Data Loss','Cryptomining','Exploits'],datasets:[{label:'Detection Rate %',data:[99.2,97.8,98.5,96.1,94.7,97.3,99.5,95.8],backgroundColor:'rgba(0,229,255,0.12)',borderColor:'#00e5ff',borderWidth:2,pointBackgroundColor:'#00e5ff',pointRadius:4},{label:'Industry Avg %',data:[82,78,75,70,60,72,85,68],backgroundColor:'rgba(255,255,255,0.03)',borderColor:'rgba(255,255,255,0.2)',borderWidth:1,pointBackgroundColor:'rgba(255,255,255,0.3)',pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},padding:12}}},scales:{r:{grid:{color:'rgba(255,255,255,0.06)'},angleLines:{color:'rgba(255,255,255,0.06)'},ticks:{display:false},suggestedMin:50,suggestedMax:100,pointLabels:{font:{size:11},color:'rgba(255,255,255,0.5)'}}}}});
+    if(document.getElementById('chartAiTrend'))
+      new Chart(document.getElementById('chartAiTrend'),{type:'line',data:{labels:['2020','2021','2022','2023','2024','2025','2026'],datasets:[{label:'AI-Powered Attacks',data:[5,12,28,47,72,110,158],borderColor:'#ff3355',backgroundColor:'rgba(255,51,85,0.08)',fill:true,tension:0.4,pointRadius:4,borderWidth:2},{label:'AI Defenses Deployed',data:[8,18,35,62,95,140,195],borderColor:'#00e5ff',backgroundColor:'rgba(0,229,255,0.08)',fill:true,tension:0.4,pointRadius:4,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},padding:12}}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{ticks:{font:{size:11},callback:v=>v+'K'},grid:{color:'rgba(255,255,255,0.03)'}}}}});
+  }
+  }catch(e){console.error('Chart init error:',e);}
+}
+// Pre-init charts after page loads (canvas needs layout)
+setTimeout(()=>{initCharts({id:'s3'});initCharts({id:'s8'});initGlobe();},2000);
+
+// ===== GLOBE.GL (lazy, with live Feodo C2 data) =====
+let globeInited=false;
+// Country code → approximate lat/lng for globe points
+const countryCoords={US:{lat:39.8,lng:-98.6},DE:{lat:51.2,lng:10.4},NL:{lat:52.1,lng:5.3},RU:{lat:61.5,lng:105.3},
+  CN:{lat:35.9,lng:104.2},FR:{lat:46.2,lng:2.2},GB:{lat:55.4,lng:-3.4},IN:{lat:20.6,lng:79.0},
+  BR:{lat:-14.2,lng:-51.9},JP:{lat:36.2,lng:138.3},KR:{lat:35.9,lng:127.8},VN:{lat:14.1,lng:108.3},
+  SG:{lat:1.4,lng:103.8},CA:{lat:56.1,lng:-106.3},AU:{lat:-25.3,lng:133.8},TR:{lat:39.0,lng:35.2},
+  UA:{lat:48.4,lng:31.2},PL:{lat:51.9,lng:19.1},RO:{lat:45.9,lng:24.9},HK:{lat:22.4,lng:114.1},
+  SE:{lat:60.1,lng:18.6},IT:{lat:41.9,lng:12.6},ES:{lat:40.5,lng:-3.7},IR:{lat:32.4,lng:53.7},
+  MX:{lat:23.6,lng:-102.6},ZA:{lat:-30.6,lng:22.9},ID:{lat:-0.8,lng:113.9},TH:{lat:15.9,lng:100.9},
+  PH:{lat:12.9,lng:121.8},AR:{lat:-38.4,lng:-63.6},NG:{lat:9.1,lng:8.7},BG:{lat:42.7,lng:25.5},
+  CZ:{lat:49.8,lng:15.5},KP:{lat:40.3,lng:127.5}};
+let liveC2Points=[];
+async function fetchFeodoC2(){
+  try{
+    let resp;
+    try{ resp=await fetch('https://feodotracker.abuse.ch/downloads/ipblocklist.json'); }
+    catch(e){ resp=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent('https://feodotracker.abuse.ch/downloads/ipblocklist.json')); }
+    const data=await resp.json();
+    liveC2Points=data.filter(d=>d.country&&countryCoords[d.country]).map(d=>{
+      const cc=countryCoords[d.country];
+      return {lat:cc.lat+(Math.random()-0.5)*4,lng:cc.lng+(Math.random()-0.5)*4,country:d.country};
+    }).slice(0,50);
+    console.log(`Loaded ${liveC2Points.length} live C2 points from Feodo`);
+  }catch(e){console.warn('Feodo fetch failed:',e);}
+}
+fetchFeodoC2();
+setInterval(fetchFeodoC2,600000);
+
+function initGlobe(){
+  if(globeInited)return;globeInited=true;
+  try{
+  const el=document.getElementById('globeViz');
+  const globe=Globe()
+    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+    .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+    .backgroundColor('rgba(0,0,0,0)')
+    .showAtmosphere(true).atmosphereColor('#0076be').atmosphereAltitude(0.18).showGraticules(false)
+    .arcColor(d=>d.color).arcDashLength(0.4).arcDashGap(0.2).arcDashAnimateTime(2500).arcStroke(0.7)
+    .pointColor(()=>'#ff3355').pointAltitude(0.01).pointRadius(0.5).pointsMerge(true)
+    (el);
+  globe.controls().autoRotate=true;globe.controls().autoRotateSpeed=0.8;globe.controls().enableZoom=false;globe.controls().enablePan=false;
+  globe.pointOfView({lat:30,lng:180,altitude:2.2});
+  globe.controls().autoRotateSpeed=1.5;
+  // Mix live C2 points with Zscaler DC locations
+  const dcLocs=[{lat:40.7,lng:-74},{lat:37.8,lng:-122.4},{lat:51.5,lng:-0.1},{lat:35.7,lng:139.7},{lat:47.4,lng:8.5},{lat:-33.9,lng:151.2},{lat:48.9,lng:2.3},{lat:1.3,lng:103.8},{lat:52.5,lng:13.4},{lat:19.4,lng:-99.1},{lat:28.6,lng:77.2},{lat:-23.5,lng:-46.6},{lat:22.3,lng:114.2},{lat:59.3,lng:18.1},{lat:25.2,lng:55.3},{lat:34.1,lng:-118.2},{lat:41.9,lng:-87.6},{lat:55.8,lng:37.6}];
+  const allPoints=[...dcLocs,...liveC2Points];
+  globe.pointsData(allPoints);
+  // Use live C2 countries as arc sources when available
+  const defaultSources=[{lat:39.9,lng:116.4},{lat:55.8,lng:37.6},{lat:35.7,lng:51.4},{lat:37.6,lng:127},{lat:-23,lng:-43},{lat:6.5,lng:3.4},{lat:13.8,lng:100.5},{lat:10.8,lng:106.6},{lat:28.6,lng:77.2},{lat:41.0,lng:29.0}];
+  const targets=[{lat:40.7,lng:-74},{lat:37.8,lng:-122.4},{lat:51.5,lng:-0.1},{lat:35.7,lng:139.7},{lat:47.4,lng:8.5},{lat:-33.9,lng:151.2},{lat:48.9,lng:2.3},{lat:1.3,lng:103.8},{lat:52.5,lng:13.4},{lat:59.3,lng:18.1}];
+  const colors=['#ff335588','#ff880088','#ff335588','#aa44ff88','#00e5ff88'];
+  let arcs=[];
+  function addArc(){
+    const sources=liveC2Points.length>0?liveC2Points:defaultSources;
+    const s=sources[Math.floor(Math.random()*sources.length)],t=targets[Math.floor(Math.random()*targets.length)];
+    arcs.push({startLat:s.lat,startLng:s.lng,endLat:t.lat,endLng:t.lng,color:colors[Math.floor(Math.random()*colors.length)]});
+    if(arcs.length>25)arcs=arcs.slice(-25);globe.arcsData(arcs);
+  }
+  for(let i=0;i<10;i++)addArc();setInterval(addArc,1200);
+  // Periodically update points with fresh C2 data
+  setInterval(()=>{if(liveC2Points.length>0)globe.pointsData([...dcLocs,...liveC2Points]);},60000);
+  function onResize(){globe.width(el.clientWidth).height(el.clientHeight);}
+  window.addEventListener('resize',onResize);setTimeout(onResize,200);
+  }catch(e){console.error('Globe error:',e);}
+}
+// APS
+setInterval(()=>{const e=document.getElementById('aps');if(e)e.textContent=(8000+Math.floor(Math.random()*4000)).toLocaleString();},1000);
+
+// ===== LIVE THREAT FEED (URLhaus + fallback) =====
+const fallbackThreats=[
+  {ty:'Ransomware',sv:'sev-c',fl:['🇨🇳','🇷🇺','🇰🇵','🇮🇷']},{ty:'Phishing Campaign',sv:'sev-h',fl:['🇳🇬','🇷🇺','🇧🇷']},
+  {ty:'Malware Dropper',sv:'sev-c',fl:['🇷🇺','🇨🇳']},{ty:'C2 Beacon',sv:'sev-h',fl:['🇨🇳','🇮🇷']},
+  {ty:'Credential Theft',sv:'sev-h',fl:['🇷🇺','🇳🇬']},{ty:'Cryptominer',sv:'sev-m',fl:['🇨🇳','🇻🇳']},
+  {ty:'DNS Tunneling',sv:'sev-m',fl:['🇮🇷','🇨🇳']},{ty:'Data Exfiltration',sv:'sev-c',fl:['🇨🇳','🇰🇵']},
+  {ty:'Exploit Kit',sv:'sev-h',fl:['🇷🇺','🇧🇷']},{ty:'Supply Chain Attack',sv:'sev-c',fl:['🇷🇺','🇨🇳']},
+  {ty:'Zero-Day Exploit',sv:'sev-c',fl:['🇨🇳','🇰🇵']},{ty:'QR Phishing',sv:'sev-h',fl:['🇳🇬','🇹🇷']},
+];
+const apps=['Microsoft 365','AWS','Salesforce','Google Workspace','SAP','Azure AD','ServiceNow','Workday','GitHub','Okta','Zoom','DocuSign','Slack','Jira','Snowflake'];
+
+// Live URLhaus data
+let liveThreats=[];
+let liveThreatIdx=0;
+const tagToType={'Mozi':'Botnet/IoT','ClearFake':'Malware Dropper','Emotet':'Banking Trojan','Qakbot':'Malware Loader',
+  'AsyncRAT':'Remote Access Trojan','AgentTesla':'Info Stealer','Pikabot':'Malware Loader','Cobalt Strike':'C2 Framework',
+  'IcedID':'Banking Trojan','RedLine':'Info Stealer','Raccoon':'Info Stealer','FormBook':'Info Stealer',
+  'Remcos':'Remote Access Trojan','njRAT':'Remote Access Trojan','DCRat':'Remote Access Trojan',
+  'GuLoader':'Malware Dropper','SmokeLoader':'Malware Loader','DanaBot':'Banking Trojan'};
+const tagToSev={'Mozi':'sev-h','ClearFake':'sev-c','Emotet':'sev-c','Qakbot':'sev-c','AsyncRAT':'sev-h',
+  'AgentTesla':'sev-h','Pikabot':'sev-c','Cobalt Strike':'sev-c','IcedID':'sev-c','RedLine':'sev-h',
+  'Raccoon':'sev-h','FormBook':'sev-h','Remcos':'sev-h','njRAT':'sev-h','DCRat':'sev-h',
+  'GuLoader':'sev-h','SmokeLoader':'sev-c','DanaBot':'sev-c'};
+const ipToFlag={'CN':'🇨🇳','RU':'🇷🇺','US':'🇺🇸','DE':'🇩🇪','NL':'🇳🇱','FR':'🇫🇷','GB':'🇬🇧','IN':'🇮🇳',
+  'BR':'🇧🇷','KR':'🇰🇷','JP':'🇯🇵','VN':'🇻🇳','IR':'🇮🇷','NG':'🇳🇬','TR':'🇹🇷','UA':'🇺🇦','SG':'🇸🇬',
+  'HK':'🇭🇰','TW':'🇹🇼','ID':'🇮🇩','PH':'🇵🇭','TH':'🇹🇭','MX':'🇲🇽','AR':'🇦🇷','ZA':'🇿🇦','PL':'🇵🇱',
+  'RO':'🇷🇴','BG':'🇧🇬','CZ':'🇨🇿','IT':'🇮🇹','ES':'🇪🇸','SE':'🇸🇪','CA':'🇨🇦','AU':'🇦🇺'};
+const defaultFlags=['🇨🇳','🇷🇺','🇺🇸','🇩🇪','🇳🇱','🇮🇳','🇧🇷','🇻🇳'];
+
+async function fetchLiveThreats(){
+  try{
+    // Try direct first, fall back to CORS proxy
+    let resp;
+    try{ resp=await fetch('https://urlhaus.abuse.ch/downloads/json_recent/'); }
+    catch(e){ resp=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent('https://urlhaus.abuse.ch/downloads/json_recent/')); }
+    const data=await resp.json();
+    const entries=Object.values(data).flat().slice(0,100);
+    liveThreats=entries.map(e=>{
+      const tags=e.tags||[];
+      const mainTag=tags.find(t=>tagToType[t])||tags[0]||'malware_download';
+      const ty=tagToType[mainTag]||e.threat||'Malware Download';
+      const sv=tagToSev[mainTag]||'sev-h';
+      const url=new URL(e.url||'http://0.0.0.0');
+      const ip=url.hostname;
+      return {ty,sv,ip,url:e.url,tags,time:e.dateadded,status:e.url_status};
+    });
+    console.log(`Loaded ${liveThreats.length} live threats from URLhaus`);
+  }catch(err){
+    console.warn('URLhaus fetch failed, using fallback:',err);
+  }
+}
+fetchLiveThreats();
+setInterval(fetchLiveThreats,300000); // Refresh every 5 min
+
+const rip=()=>`${Math.floor(Math.random()*223)+1}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`;
+let fc=0;
+function addFeed(){
+  const f=document.getElementById('feed');if(!f)return;
+  let ty,sv,fl,detail,tm;
+  if(liveThreats.length>0){
+    // Use real URLhaus data
+    const t=liveThreats[liveThreatIdx%liveThreats.length];
+    liveThreatIdx++;
+    ty=t.ty;sv=t.sv;
+    fl=defaultFlags[Math.floor(Math.random()*defaultFlags.length)];
+    detail=`${t.ip} → ${t.tags.length?t.tags[0]:'malware'}`;
+    tm=t.time?t.time.split(' ')[1]||new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }else{
+    // Fallback to simulated data
+    const t=fallbackThreats[Math.floor(Math.random()*fallbackThreats.length)];
+    const a=apps[Math.floor(Math.random()*apps.length)];
+    ty=t.ty;sv=t.sv;fl=t.fl[Math.floor(Math.random()*t.fl.length)];
+    detail=`${rip()} → ${a}`;
+    tm=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+  const r=document.createElement('div');r.className='feed-row';
+  r.innerHTML=`<div class="sev ${sv}"></div><div class="f-flag">${fl}</div><div class="f-type">${ty}</div><div class="f-detail">${detail}</div><div class="f-blocked">● BLOCKED</div><div class="f-time">${tm}</div>`;
+  f.insertBefore(r,f.firstChild);if(++fc>16)f.removeChild(f.lastChild);
+}
+setInterval(addFeed,500);
+
+// ===== TICKER (mix live + static) =====
+const staticTicker=[
+  '🔵 <strong>500+ billion</strong> transactions processed daily across the Zscaler Zero Trust Exchange',
+  '🟢 <strong>99.999% uptime</strong> — 150+ data centers across 6 continents',
+  '🔴 AI-generated phishing up <span class="warn">340%</span> year-over-year — deepfakes now in email',
+  '🔵 Zscaler named <strong>Gartner Magic Quadrant Leader</strong> for SSE — 2025',
+  '🟢 ThreatLabz identified <strong>23 new malware families</strong> this week',
+  '🔴 <span class="warn">QR code phishing</span> up 587% in enterprise environments',
+  '🟠 <strong>Scattered Spider</strong> group pivoting to cloud-native attacks',
+  '🔵 Enterprise AI adoption up <strong>91%</strong> — securing AI/ML pipelines is critical',
+  '🟢 <strong>7,700+ customers</strong> including 30% of the Forbes Global 2000 trust Zscaler',
+];
+function buildTicker(){
+  const ti=[...staticTicker];
+  // Add live URLhaus entries to ticker
+  if(liveThreats.length>0){
+    const recent=liveThreats.slice(0,5);
+    recent.forEach(t=>{
+      const tag=t.tags.length?t.tags[0]:'unknown';
+      const status=t.status==='online'?'<span class="warn">ACTIVE</span>':'mitigated';
+      ti.unshift(`🔴 <strong>${t.ty}</strong> — ${tag} payload at <span class="warn">${t.ip}</span> — ${status}`);
+    });
+  }
+  const tk=document.getElementById('ticker');
+  const th=ti.map(t=>`<div class="ticker-item">${t}</div>`).join('<span class="ticker-dot">●</span>');
+  tk.innerHTML=th+'<span class="ticker-dot">●</span>'+th;
+}
+buildTicker();
+// Rebuild ticker when live data loads
+setTimeout(buildTicker,8000);
+setInterval(buildTicker,300000);
+
+// ===== ZTE IMAGE ROTATION (every 5 min) =====
+const zteImages=['img/zte-diagram.jpg','img/zte-platform-hero.jpg','img/zte-architecture.jpg','img/zte-mobile.jpg'];
+let zteIdx=0;
+setInterval(()=>{
+  const img=document.getElementById('zte-rotate');
+  if(!img) return;
+  img.style.opacity='0';
+  setTimeout(()=>{
+    zteIdx=(zteIdx+1)%zteImages.length;
+    img.src=zteImages[zteIdx];
+    img.style.opacity='0.85';
+  },1000);
+},300000); // 5 min
+
+// Auto-reload every hour
+setInterval(()=>location.reload(),3600000);
+</script>
+</body>
+</html>
