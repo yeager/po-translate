@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-__version__ = "1.5.4"
+__version__ = "1.5.5"
 
 # Simple passthrough (i18n removed)
 def _(s): return s
@@ -359,11 +359,12 @@ class OpenAITranslator(Translator):
             return []
         
         # Build prompt with numbered items
-        items = "\n".join(f"{i+1}. {t}" for i, t in enumerate(texts))
+        items = "\n".join(f"{i+1}. {t.replace(chr(10), '\\n')}" for i, t in enumerate(texts))
         
         prompt = f"""Translate the following {len(texts)} UI strings from {source_lang} to {target_lang}.
 Keep placeholders like {{0}}, %s, %d exactly as they are.
 Keep it concise - these are UI labels.
+Strings may contain literal \\n which represents a newline - preserve them in translations.
 Return ONLY the translations, one per line, numbered:
 
 {items}"""
@@ -400,7 +401,8 @@ Return ONLY the translations, one per line, numbered:
                 # Remove numbering (1. 2. etc)
                 match = re.match(r'^\d+\.\s*(.+)$', line.strip())
                 if match:
-                    translations.append(match.group(1))
+                    # Restore escaped newlines
+                    translations.append(match.group(1).replace('\\n', '\n'))
             
             # Pad with originals if we didn't get enough
             while len(translations) < len(texts):
@@ -429,10 +431,11 @@ class AnthropicTranslator(Translator):
         if not texts:
             return []
         
-        items = "\n".join(f"{i+1}. {t}" for i, t in enumerate(texts))
+        items = "\n".join(f"{i+1}. {t.replace(chr(10), '\\n')}" for i, t in enumerate(texts))
         
         prompt = f"""Translate these {len(texts)} UI strings from {source_lang} to {target_lang}.
 Keep placeholders like {{0}}, %s, %d exactly as they are.
+Strings may contain literal \\n which represents a newline - preserve them in translations.
 Return ONLY the translations, one per line, numbered:
 
 {items}"""
