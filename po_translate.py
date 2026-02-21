@@ -26,10 +26,31 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-__version__ = "1.5.5"
+__version__ = "1.5.6"
 
 # Simple passthrough (i18n removed)
-def _(s): return s
+import gettext
+import locale
+
+try:
+    locale.setlocale(locale.LC_ALL, "")
+except locale.Error:
+    pass
+
+_LOCALE_DIR = None
+for _d in [
+    Path(__file__).parent / "po",
+    Path("/usr/share/locale"),
+    Path("/usr/local/share/locale"),
+]:
+    if _d.is_dir():
+        _LOCALE_DIR = _d
+        break
+
+locale.bindtextdomain("po-translate", str(_LOCALE_DIR) if _LOCALE_DIR else None)
+gettext.bindtextdomain("po-translate", str(_LOCALE_DIR) if _LOCALE_DIR else None)
+gettext.textdomain("po-translate")
+_ = gettext.gettext
 
 
 @dataclass
