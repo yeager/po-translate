@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-__version__ = "1.5.6"
+__version__ = "1.5.7"
 
 # Simple passthrough (i18n removed)
 import gettext
@@ -416,7 +416,8 @@ Return ONLY the translations, one per line, numbered:
             result = json.loads(response.read().decode())
             content = result['choices'][0]['message']['content']
             
-            # Parse numbered responses
+            # Parse numbered responses — handle multi-line translations
+            # where the AI may split a single translation across lines
             translations = []
             for line in content.strip().split('\n'):
                 # Remove numbering (1. 2. etc)
@@ -424,6 +425,9 @@ Return ONLY the translations, one per line, numbered:
                 if match:
                     # Restore escaped newlines
                     translations.append(match.group(1).replace('\\n', '\n'))
+                elif line.strip() and translations:
+                    # Continuation of previous translation (no number prefix)
+                    translations[-1] += '\n' + line.strip().replace('\\n', '\n')
             
             # Pad with originals if we didn't get enough
             while len(translations) < len(texts):
@@ -485,11 +489,15 @@ Return ONLY the translations, one per line, numbered:
             result = json.loads(response.read().decode())
             content = result['content'][0]['text']
             
+            # Parse numbered responses — handle multi-line translations
             translations = []
             for line in content.strip().split('\n'):
                 match = re.match(r'^\d+\.\s*(.+)$', line.strip())
                 if match:
-                    translations.append(match.group(1))
+                    translations.append(match.group(1).replace('\\n', '\n'))
+                elif line.strip() and translations:
+                    # Continuation of previous translation (no number prefix)
+                    translations[-1] += '\n' + line.strip().replace('\\n', '\n')
             
             while len(translations) < len(texts):
                 translations.append(texts[len(translations)])
