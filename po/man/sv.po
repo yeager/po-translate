@@ -2,10 +2,10 @@
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-# 
+#
 # Translators:
 # Daniel Nylander <po@danielnylander.se>, 2026
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -13,11 +13,12 @@ msgstr ""
 "POT-Creation-Date: 2026-02-16 11:42+0000\n"
 "PO-Revision-Date: 2026-02-15 14:39+0000\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>, 2026\n"
-"Language-Team: Swedish (https://app.transifex.com/danielnylander/teams/304710/sv/)\n"
+"Language-Team: Swedish (https://app.transifex.com/danielnylander/"
+"teams/304710/sv/)\n"
+"Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: sv\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #. type: TH
@@ -95,8 +96,8 @@ msgid ""
 "marked as fuzzy for human review."
 msgstr ""
 "Endast tomma (icke-översatta) msgstr-poster översätts. Befintliga "
-"översättningar skrivs aldrig över. Översatta poster markeras automatiskt som"
-" oklara för manuell granskning."
+"översättningar skrivs aldrig över. Översatta poster markeras automatiskt som "
+"oklara för manuell granskning."
 
 #. type: Plain text
 #: data/man/po-translate.1:18
@@ -187,8 +188,8 @@ msgstr "B<lingva> (standard)"
 #. type: Plain text
 #: data/man/po-translate.1:41
 msgid ""
-"Free, no API key required. Uses Lingva Translate public instances.  Good for"
-" most European languages."
+"Free, no API key required. Uses Lingva Translate public instances.  Good for "
+"most European languages."
 msgstr ""
 "Gratis, ingen API-nyckel krävs. Använder Lingva Translate offentliga "
 "instanser. Passar bra för de flesta europeiska språk."
@@ -231,8 +232,8 @@ msgid ""
 "DeepL Pro API. Requires B<--api-key>. High-quality translations for "
 "supported languages."
 msgstr ""
-"DeepL Pro API. Kräver B-<--api-key>. Högkvalitativa översättningar för språk"
-" som stöds."
+"DeepL Pro API. Kräver B-<--api-key>. Högkvalitativa översättningar för språk "
+"som stöds."
 
 #. type: TP
 #: data/man/po-translate.1:52
@@ -313,8 +314,7 @@ msgstr "B<--url> I<URL>"
 
 #. type: Plain text
 #: data/man/po-translate.1:77
-msgid ""
-"Custom server URL for LibreTranslate. Example: B<http://localhost:5000>"
+msgid "Custom server URL for LibreTranslate. Example: B<http://localhost:5000>"
 msgstr ""
 "Anpassad server-URL för LibreTranslate. Exempel: B<http://localhost:5000>"
 
@@ -327,11 +327,11 @@ msgstr "B<--model> I<MODELL>"
 #. type: Plain text
 #: data/man/po-translate.1:81
 msgid ""
-"Model name for AI services. Examples: B<gpt-4o-mini>, "
-"B<claude-3-haiku-20240307>."
+"Model name for AI services. Examples: B<gpt-4o-mini>, B<claude-3-"
+"haiku-20240307>."
 msgstr ""
-"Modellnamn för AI-tjänster. Exempel: B<gpt-4o-mini>, "
-"B<claude-3-haiku-20240307>."
+"Modellnamn för AI-tjänster. Exempel: B<gpt-4o-mini>, B<claude-3-"
+"haiku-20240307>."
 
 #. type: TP
 #: data/man/po-translate.1:81
@@ -360,8 +360,8 @@ msgid ""
 "CSV glossary file for custom terminology. Format: one I<source,target> pair "
 "per line. Glossary terms override machine translations."
 msgstr ""
-"CSV-ordlista för anpassad terminologi. Format: ett I<källa,mål>-par per rad."
-" Ordlistans termer åsidosätter maskinöversättningar."
+"CSV-ordlista för anpassad terminologi. Format: ett I<källa,mål>-par per rad. "
+"Ordlistans termer åsidosätter maskinöversättningar."
 
 #. type: TP
 #: data/man/po-translate.1:89
@@ -553,12 +553,8 @@ msgstr "Använd OpenAI GPT-4 för högkvalitativa översättningar:"
 #. type: Plain text
 #: data/man/po-translate.1:162
 #, no-wrap
-msgid ""
-"po-translate -s en -t sv --service openai --model gpt-4o --api-key "
-"$OPENAI_API_KEY po/\n"
-msgstr ""
-"po-translate -s en -t sv --service openai --model gpt-4o --api-key "
-"$OPENAI_API_KEY po/\n"
+msgid "po-translate -s en -t sv --service openai --model gpt-4o --api-key $OPENAI_API_KEY po/\n"
+msgstr "po-translate -s en -t sv --service openai --model gpt-4o --api-key $OPENAI_API_KEY po/\n"
 
 #. type: SH
 #: data/man/po-translate.1:164
