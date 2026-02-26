@@ -127,7 +127,7 @@ jobs:
           with open(f"{home}/rpmbuild/SPECS/po-translate.spec", "w") as f:
               f.write(spec)
 
-          subprocess.run(["rpmbuild", "-ba", f"{home}/rpmbuild/SPECS/po-translate.spec"], check=True)
+          subprocess.run(["rpmbuild", "-ba", "--nodeps", f"{home}/rpmbuild/SPECS/po-translate.spec"], check=True)
 
       - name: Upload RPM to release
         if: github.event_name == 'release'
