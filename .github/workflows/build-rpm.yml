@@ -61,7 +61,7 @@ jobs:
           
           TODAY=$(LC_ALL=C date +"%a %b %d %Y")
           
-          cat > ~/rpmbuild/SPECS/po-translate.spec << SPEC
+          cat > ~/rpmbuild/SPECS/po-translate.spec << SPECEOF
           Name:           po-translate
           Version:        $VER
           Release:        1
@@ -100,9 +100,9 @@ jobs:
           install -Dm644 io.github.yeager.po-translate.metainfo.xml %{buildroot}/usr/share/metainfo/io.github.yeager.po-translate.metainfo.xml
           
           for mofile in locale/*/LC_MESSAGES/*.mo; do
-            [ -f "$mofile" ] || continue
-            lang=$(echo "$mofile" | cut -d/ -f2)
-            install -Dm644 "$mofile" "%{buildroot}/usr/share/locale/$lang/LC_MESSAGES/po-translate.mo"
+            [ -f "\$mofile" ] || continue
+            lang=\$(echo "\$mofile" | cut -d/ -f2)
+            install -Dm644 "\$mofile" "%{buildroot}/usr/share/locale/\$lang/LC_MESSAGES/po-translate.mo"
           done
           
           %files
