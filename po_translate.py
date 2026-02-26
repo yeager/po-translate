@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-__version__ = "1.5.7"
+__version__ = "1.5.8"
 
 # Simple passthrough (i18n removed)
 import gettext
@@ -748,7 +748,7 @@ def get_translator(service: str, config: dict) -> Translator:
 
 def translate_file(filepath: str, translator: Translator, source_lang: str, target_lang: str, 
                    batch_size: int = 10, dry_run: bool = False, verbose: bool = False,
-                   glossary: dict = None) -> dict:
+                   glossary: dict = None, mark_fuzzy: bool = False) -> dict:
     """Translate a single file."""
     ext = Path(filepath).suffix.lower()
     file_start = time.time()
@@ -820,6 +820,8 @@ def translate_file(filepath: str, translator: Translator, source_lang: str, targ
                         re.escape(src_term), tgt_term, translation, flags=re.IGNORECASE
                     )
             entry.msgstr = translation
+            if mark_fuzzy and 'fuzzy' not in entry.flags:
+                entry.flags.append('fuzzy')
             translated_count += 1
         
         chars_per_sec = batch_chars / api_elapsed if api_elapsed > 0 else 0
@@ -935,6 +937,7 @@ Services (API key required):
     parser.add_argument('--model', help=_('Model for AI services (e.g., gpt-4o-mini, claude-3-haiku-20240307)'))
     parser.add_argument('--batch-size', type=int, default=10, help=_('Entries per API call (default: 10)'))
     parser.add_argument('--glossary', help=_('CSV glossary file (source,target per line) for custom terms'))
+    parser.add_argument('--fuzzy', action='store_true', help=_('Mark translated strings as fuzzy (needs review)'))
     parser.add_argument('--dry-run', action='store_true', help=_("Don't save changes"))
     parser.add_argument('--no-recursive', action='store_true', help=_("Don't search subdirectories"))
     parser.add_argument('-j', '--json', action='store_true', help=_('JSON output'))
@@ -1042,7 +1045,8 @@ Services (API key required):
                 batch_size=args.batch_size,
                 dry_run=args.dry_run,
                 verbose=verbose,
-                glossary=_glossary
+                glossary=_glossary,
+                mark_fuzzy=args.fuzzy
             )
             
             if 'error' in result:
