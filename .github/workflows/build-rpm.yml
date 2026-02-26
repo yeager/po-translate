@@ -99,9 +99,11 @@ jobs:
           install -Dm644 po-translate.1 %{buildroot}/usr/share/man/man1/po-translate.1
           install -Dm644 io.github.yeager.po-translate.metainfo.xml %{buildroot}/usr/share/metainfo/io.github.yeager.po-translate.metainfo.xml
           
-          if [ -d locale ]; then
-            cp -r locale/* %{buildroot}/usr/share/locale/
-          fi
+          for mofile in locale/*/LC_MESSAGES/*.mo; do
+            [ -f "$mofile" ] || continue
+            lang=$(echo "$mofile" | cut -d/ -f2)
+            install -Dm644 "$mofile" "%{buildroot}/usr/share/locale/$lang/LC_MESSAGES/po-translate.mo"
+          done
           
           %files
           %license LICENSE
@@ -120,6 +122,10 @@ jobs:
           # Fix indentation (heredoc adds leading spaces)
           sed -i 's/^          //' ~/rpmbuild/SPECS/po-translate.spec
           
+          echo "=== SPEC ==="
+          cat ~/rpmbuild/SPECS/po-translate.spec
+          echo "=== TARBALL CONTENTS ==="
+          tar tzf ~/rpmbuild/SOURCES/po-translate-$VER.tar.gz | head -30
           rpmbuild -ba --nodeps ~/rpmbuild/SPECS/po-translate.spec
 
       - name: Upload RPM to release
