@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install RPM tools
-        run: sudo apt-get update && sudo apt-get install -y rpm python3-pip python3-setuptools
+        run: sudo apt-get update && sudo apt-get install -y rpm
 
       - name: Get version
         id: version
@@ -34,17 +34,13 @@ jobs:
           for d in ["BUILD","RPMS","SOURCES","SPECS","SRPMS"]:
               os.makedirs(f"{home}/rpmbuild/{d}", exist_ok=True)
 
-          # Create proper source package with all needed files
+          # Create source tarball
           os.makedirs(f"{pkg}", exist_ok=True)
-          subprocess.run(f"cp po_translate.py {pkg}/", shell=True, check=True)
-          subprocess.run(f"cp pyproject.toml {pkg}/", shell=True, check=True)
-          subprocess.run(f"cp LICENSE {pkg}/", shell=True, check=True)
-          subprocess.run(f"cp README.md {pkg}/", shell=True, check=True)
-          subprocess.run(f"cp po-translate.1 {pkg}/", shell=True, check=True)
-          subprocess.run(f"cp io.github.yeager.po-translate.metainfo.xml {pkg}/", shell=True, check=True)
-          subprocess.run(f"test -d data && cp -r data {pkg}/ || true", shell=True, check=True)
+          for f in ["po_translate.py", "pyproject.toml", "LICENSE", "README.md",
+                     "po-translate.1", "io.github.yeager.po-translate.metainfo.xml"]:
+              subprocess.run(f"cp {f} {pkg}/", shell=True, check=True)
           subprocess.run(f"test -d po && cp -r po {pkg}/ || true", shell=True, check=True)
-          subprocess.run(f"tar czf {home}/rpmbuild/SOURCES/po-translate-{version}.tar.gz {pkg}", shell=True, check=True)
+          subprocess.run(f"tar czf {home}/rpmbuild/SOURCES/{pkg}.tar.gz {pkg}", shell=True, check=True)
 
           today = datetime.datetime.now().strftime("%a %b %d %Y")
           spec = textwrap.dedent(f"""\
@@ -54,80 +50,71 @@ jobs:
           Summary:        Batch translate PO and TS localization files
           License:        GPL-3.0-or-later
           URL:            https://github.com/yeager/po-translate
-          Source0:        %{{name}}-%{{version}}.tar.gz
+          Source0:        po-translate-%{{version}}.tar.gz
           BuildArch:      noarch
           Requires:       python3 >= 3.9
-          BuildRequires:  python3-pip
-          BuildRequires:  python3-setuptools
 
           %description
-          A CLI tool for batch translating PO and TS files using various translation APIs.
+          A CLI tool for batch translating .po and .ts localization files using
+          various translation services including OpenAI, Anthropic, DeepL, Google
+          Cloud, Lingva, MyMemory, and LibreTranslate.
 
           %prep
           %setup -q
 
           %build
-          # Install to temporary directory using pip
-          python3 -m pip install --no-deps --target ./build_install .
+          # Nothing to build — pure Python
 
           %install
-          # Install the Python package
-          mkdir -p %{{buildroot}}%{{python3_sitelib}}
-          cp -r build_install/* %{{buildroot}}%{{python3_sitelib}}/
-
-          # Install the CLI binary
-          mkdir -p %{{buildroot}}%{{_bindir}}
-          python3 -c "
+          # CLI wrapper
+          mkdir -p %{{buildroot}}/usr/bin
+          cat > %{{buildroot}}/usr/bin/po-translate << 'WRAPPER'
+          #!/usr/bin/env python3
           import sys, os
-          sys.path.insert(0, 'build_install')
-          from setuptools import setup
-          from setuptools.command.install_scripts import install_scripts
-          
-          # Create wrapper script for po-translate
-          script_content = '''#!/usr/bin/env python3
-          import sys
+          sys.path.insert(0, '/usr/share/po-translate')
           from po_translate import main
-          if __name__ == '__main__':
-              sys.exit(main())
-          '''
-          
-          with open('%{{buildroot}}%{{_bindir}}/po-translate', 'w') as f:
-              f.write(script_content)
-          "
-          chmod 755 %{{buildroot}}%{{_bindir}}/po-translate
+          sys.exit(main())
+          WRAPPER
+          chmod 755 %{{buildroot}}/usr/bin/po-translate
 
-          # Install man page
-          install -Dm644 po-translate.1 %{{buildroot}}%{{_mandir}}/man1/po-translate.1
+          # Python module
+          mkdir -p %{{buildroot}}/usr/share/po-translate
+          install -m644 po_translate.py %{{buildroot}}/usr/share/po-translate/po_translate.py
 
-          # Install metainfo
-          install -Dm644 io.github.yeager.po-translate.metainfo.xml %{{buildroot}}%{{_datadir}}/metainfo/io.github.yeager.po-translate.metainfo.xml
+          # Man page
+          install -Dm644 po-translate.1 %{{buildroot}}/usr/share/man/man1/po-translate.1
 
-          # Install locale files if they exist
-          if [ -d data ]; then
-            for mo in data/locale/*/LC_MESSAGES/*.mo; do
-              [ -f "$mo" ] || continue
-              lang=$(echo "$mo" | cut -d/ -f3)
-              install -Dm644 "$mo" "%{{buildroot}}%{{_datadir}}/locale/$lang/LC_MESSAGES/po-translate.mo"
+          # Metainfo
+          install -Dm644 io.github.yeager.po-translate.metainfo.xml %{{buildroot}}/usr/share/metainfo/io.github.yeager.po-translate.metainfo.xml
+
+          # Locale files
+          if [ -d po ]; then
+            for pofile in po/*.po; do
+              [ -f "$pofile" ] || continue
+              lang=$(basename "$pofile" .po)
+              mkdir -p "%{{buildroot}}/usr/share/locale/$lang/LC_MESSAGES"
+              msgfmt -o "%{{buildroot}}/usr/share/locale/$lang/LC_MESSAGES/po-translate.mo" "$pofile" 2>/dev/null || true
             done
           fi
 
           %files
           %license LICENSE
-          %{{_bindir}}/po-translate
-          %{{python3_sitelib}}/po_translate.py*
-          %{{python3_sitelib}}/po_translate_ai-*
-          %{{_mandir}}/man1/po-translate.1*
-          %{{_datadir}}/metainfo/io.github.yeager.po-translate.metainfo.xml
-          %{{_datadir}}/locale/*/LC_MESSAGES/po-translate.mo
+          %doc README.md
+          /usr/bin/po-translate
+          /usr/share/po-translate/po_translate.py
+          /usr/share/man/man1/po-translate.1*
+          /usr/share/metainfo/io.github.yeager.po-translate.metainfo.xml
+          /usr/share/locale/*/LC_MESSAGES/po-translate.mo
 
           %changelog
           * {today} Daniel Nylander <daniel@danielnylander.se> - {version}-1
-          - Fixed RPM to include proper Python package and CLI binary
+          - Add --fuzzy flag to mark AI translations as needs-review
           """)
           with open(f"{home}/rpmbuild/SPECS/po-translate.spec", "w") as f:
               f.write(spec)
 
-          subprocess.run(["rpmbuild", "-ba", "--nodeps", f"{home}/rpmbuild/SPECS/po-translate.spec"], check=True)
+          subprocess.run(["rpmbuild", "-ba", "--nodeps",
+                          f"{home}/rpmbuild/SPECS/po-translate.spec"], check=True)
 
       - name: Upload RPM to release
         if: github.event_name == 'release'
@@ -135,6 +122,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=${{ steps.version.outputs.version }}
-          gh release upload "v${VERSION}" \
-            ~/rpmbuild/RPMS/noarch/po-translate-${VERSION}-1.noarch.rpm \
-            --clobber
+          RPM=$(find ~/rpmbuild/RPMS -name "*.rpm" | head -1)
+          if [ -n "$RPM" ]; then
+            gh release upload "v${VERSION}" "$RPM" --clobber
+          fi
