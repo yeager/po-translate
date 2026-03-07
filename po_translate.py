@@ -26,31 +26,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-__version__ = "1.5.7"
+__version__ = "1.6.0"
 
 # Simple passthrough (i18n removed)
-import gettext
-import locale
-
-try:
-    locale.setlocale(locale.LC_ALL, "")
-except locale.Error:
-    pass
-
-_LOCALE_DIR = None
-for _d in [
-    Path(__file__).parent / "po",
-    Path("/usr/share/locale"),
-    Path("/usr/local/share/locale"),
-]:
-    if _d.is_dir():
-        _LOCALE_DIR = _d
-        break
-
-locale.bindtextdomain("po-translate", str(_LOCALE_DIR) if _LOCALE_DIR else None)
-gettext.bindtextdomain("po-translate", str(_LOCALE_DIR) if _LOCALE_DIR else None)
-gettext.textdomain("po-translate")
-_ = gettext.gettext
+def _(s): return s
 
 
 @dataclass
@@ -59,15 +38,28 @@ class TranslationEntry:
     msgid: str
     msgstr: str = ""
     msgctxt: str = ""
+    msgid_plural: str = ""
+    msgstr_plural: dict = field(default_factory=dict)  # {0: "...", 1: "..."}
     comments: list = field(default_factory=list)
     flags: list = field(default_factory=list)
     line: int = 0
+    _raw_lines: list = field(default_factory=list)  # Preserve original line wrapping
+    
+    @property
+    def is_plural(self) -> bool:
+        """Check if this is a plural entry."""
+        return bool(self.msgid_plural)
     
     @property
     def needs_translation(self) -> bool:
         """Check if entry needs translation."""
         if not self.msgid:  # Header
             return False
+        if self.is_plural:
+            # Plural: needs translation if any msgstr[N] is empty
+            if not self.msgstr_plural:
+                return True
+            return any(not v for v in self.msgstr_plural.values())
         if self.msgstr:  # Already translated
             return False
         if 'fuzzy' in self.flags:  # Fuzzy = needs review, not retranslation
@@ -120,17 +112,23 @@ class POFile:
                     entry.comments.append(line)
                 continue
             
-            # msgctxt, msgid, msgstr
-            for key in ['msgctxt', 'msgid', 'msgid_plural', 'msgstr']:
+            # msgctxt, msgid, msgid_plural, msgstr (check longer keys first)
+            for key in ['msgctxt', 'msgid_plural', 'msgid', 'msgstr']:
                 if line.startswith(key):
                     match = re.match(rf'{key}(\[\d+\])?\s+"(.*)"', line)
                     if match:
                         suffix = match.group(1) or ''
                         value = self._unescape(match.group(2))
                         
-                        if key == 'msgid':
+                        if key == 'msgid' and not suffix:
                             entry.msgid = value
-                        elif key == 'msgstr':
+                        elif key == 'msgid_plural':
+                            entry.msgid_plural = value
+                        elif key == 'msgstr' and suffix:
+                            # msgstr[N] — plural form
+                            idx = int(suffix[1:-1])  # [0] → 0
+                            entry.msgstr_plural[idx] = value
+                        elif key == 'msgstr' and not suffix:
                             entry.msgstr = value
                         elif key == 'msgctxt':
                             entry.msgctxt = value
@@ -145,8 +143,13 @@ class POFile:
                         value = self._unescape(match.group(1))
                         if current_key == 'msgid':
                             entry.msgid += value
+                        elif current_key == 'msgid_plural':
+                            entry.msgid_plural += value
                         elif current_key == 'msgstr':
                             entry.msgstr += value
+                        elif current_key.startswith('msgstr['):
+                            idx = int(current_key[7:-1])
+                            entry.msgstr_plural[idx] = entry.msgstr_plural.get(idx, '') + value
                         elif current_key == 'msgctxt':
                             entry.msgctxt += value
         
@@ -186,8 +189,19 @@ class POFile:
             # msgid
             lines.append(f'msgid "{self._escape(entry.msgid)}"')
             
-            # msgstr
-            lines.append(f'msgstr "{self._escape(entry.msgstr)}"')
+            # msgid_plural
+            if entry.msgid_plural:
+                lines.append(f'msgid_plural "{self._escape(entry.msgid_plural)}"')
+            
+            # msgstr / msgstr[N]
+            if entry.is_plural:
+                # Output plural forms
+                max_idx = max(entry.msgstr_plural.keys()) if entry.msgstr_plural else 1
+                for i in range(max_idx + 1):
+                    val = entry.msgstr_plural.get(i, '')
+                    lines.append(f'msgstr[{i}] "{self._escape(val)}"')
+            else:
+                lines.append(f'msgstr "{self._escape(entry.msgstr)}"')
             
             lines.append('')
         
@@ -380,12 +394,11 @@ class OpenAITranslator(Translator):
             return []
         
         # Build prompt with numbered items
-        items = "\n".join(f"{i+1}. {t.replace(chr(10), '\\n')}" for i, t in enumerate(texts))
+        items = "\n".join(f"{i+1}. {t}" for i, t in enumerate(texts))
         
         prompt = f"""Translate the following {len(texts)} UI strings from {source_lang} to {target_lang}.
 Keep placeholders like {{0}}, %s, %d exactly as they are.
 Keep it concise - these are UI labels.
-Strings may contain literal \\n which represents a newline - preserve them in translations.
 Return ONLY the translations, one per line, numbered:
 
 {items}"""
@@ -416,18 +429,13 @@ Return ONLY the translations, one per line, numbered:
             result = json.loads(response.read().decode())
             content = result['choices'][0]['message']['content']
             
-            # Parse numbered responses — handle multi-line translations
-            # where the AI may split a single translation across lines
+            # Parse numbered responses
             translations = []
             for line in content.strip().split('\n'):
                 # Remove numbering (1. 2. etc)
                 match = re.match(r'^\d+\.\s*(.+)$', line.strip())
                 if match:
-                    # Restore escaped newlines
-                    translations.append(match.group(1).replace('\\n', '\n'))
-                elif line.strip() and translations:
-                    # Continuation of previous translation (no number prefix)
-                    translations[-1] += '\n' + line.strip().replace('\\n', '\n')
+                    translations.append(match.group(1))
             
             # Pad with originals if we didn't get enough
             while len(translations) < len(texts):
@@ -456,11 +464,10 @@ class AnthropicTranslator(Translator):
         if not texts:
             return []
         
-        items = "\n".join(f"{i+1}. {t.replace(chr(10), '\\n')}" for i, t in enumerate(texts))
+        items = "\n".join(f"{i+1}. {t}" for i, t in enumerate(texts))
         
         prompt = f"""Translate these {len(texts)} UI strings from {source_lang} to {target_lang}.
 Keep placeholders like {{0}}, %s, %d exactly as they are.
-Strings may contain literal \\n which represents a newline - preserve them in translations.
 Return ONLY the translations, one per line, numbered:
 
 {items}"""
@@ -489,15 +496,11 @@ Return ONLY the translations, one per line, numbered:
             result = json.loads(response.read().decode())
             content = result['content'][0]['text']
             
-            # Parse numbered responses — handle multi-line translations
             translations = []
             for line in content.strip().split('\n'):
                 match = re.match(r'^\d+\.\s*(.+)$', line.strip())
                 if match:
-                    translations.append(match.group(1).replace('\\n', '\n'))
-                elif line.strip() and translations:
-                    # Continuation of previous translation (no number prefix)
-                    translations[-1] += '\n' + line.strip().replace('\\n', '\n')
+                    translations.append(match.group(1))
             
             while len(translations) < len(texts):
                 translations.append(texts[len(translations)])
@@ -748,7 +751,7 @@ def get_translator(service: str, config: dict) -> Translator:
 
 def translate_file(filepath: str, translator: Translator, source_lang: str, target_lang: str, 
                    batch_size: int = 10, dry_run: bool = False, verbose: bool = False,
-                   glossary: dict = None) -> dict:
+                   glossary: dict = None, mark_fuzzy: bool = False) -> dict:
     """Translate a single file."""
     ext = Path(filepath).suffix.lower()
     file_start = time.time()
@@ -820,6 +823,8 @@ def translate_file(filepath: str, translator: Translator, source_lang: str, targ
                         re.escape(src_term), tgt_term, translation, flags=re.IGNORECASE
                     )
             entry.msgstr = translation
+            if mark_fuzzy and 'fuzzy' not in entry.flags:
+                entry.flags.append('fuzzy')
             translated_count += 1
         
         chars_per_sec = batch_chars / api_elapsed if api_elapsed > 0 else 0
@@ -935,6 +940,7 @@ Services (API key required):
     parser.add_argument('--model', help=_('Model for AI services (e.g., gpt-4o-mini, claude-3-haiku-20240307)'))
     parser.add_argument('--batch-size', type=int, default=10, help=_('Entries per API call (default: 10)'))
     parser.add_argument('--glossary', help=_('CSV glossary file (source,target per line) for custom terms'))
+    parser.add_argument('--fuzzy', action='store_true', help=_('Mark new translations as fuzzy (needs review)'))
     parser.add_argument('--dry-run', action='store_true', help=_("Don't save changes"))
     parser.add_argument('--no-recursive', action='store_true', help=_("Don't search subdirectories"))
     parser.add_argument('-j', '--json', action='store_true', help=_('JSON output'))
@@ -1042,7 +1048,8 @@ Services (API key required):
                 batch_size=args.batch_size,
                 dry_run=args.dry_run,
                 verbose=verbose,
-                glossary=_glossary
+                glossary=_glossary,
+                mark_fuzzy=args.fuzzy
             )
             
             if 'error' in result:
