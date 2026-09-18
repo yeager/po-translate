@@ -21,7 +21,7 @@ Version: $VER
 Section: devel
 Priority: optional
 Architecture: all
-Depends: python3 (>= 3.10), python3-polib
+Depends: python3 (>= 3.10)
 Maintainer: Daniel Nylander <daniel@danielnylander.se>
 Homepage: https://github.com/yeager/po-translate
 Description: Batch translate PO and TS localization files

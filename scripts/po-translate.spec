@@ -1,5 +1,5 @@
 Name:           po-translate
-Version:        1.5.0
+Version:        1.6.1
 Release:        1%{?dist}
 Summary:        Batch translate PO and TS localization files
 License:        GPL-3.0-or-later
@@ -7,7 +7,6 @@ URL:            https://github.com/yeager/po-translate
 Source0:        %{name}-%{version}.tar.gz
 BuildArch:      noarch
 Requires:       python3 >= 3.10
-Requires:       python3-polib
 
 %description
 A CLI tool for batch translating PO and TS files using

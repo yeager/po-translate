@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.6.1] - 2026-09-18
+
+### Fixed
+- Translate each PO and Qt plural form into its matching target field.
+- Preserve obsolete PO entries when saving a catalog.
+- Abort without saving when a provider fails, returns an incomplete batch, or
+  changes placeholders such as `%s`, `%n`, `{name}` or `{0}`.
+- Return a non-zero status for invalid batch sizes and failed files; JSON output
+  is valid JSON without progress text.
+- Make `--about` work without a source language or input path.
+
+### Changed
+- Skip XLIFF and Qt messages containing inline XML markup instead of corrupting
+  their structure.
+
 ## [1.5.0] - 2026-02-14
 
 ### Added

@@ -38,7 +38,7 @@ jobs:
           chmod 755 ${ROOT}/usr/bin/${PKG}
 
           # English man page
-          gzip -9cn data/man/${PKG}.1 > ${ROOT}/usr/share/man/man1/${PKG}.1.gz
+          gzip -9cn ${PKG}.1 > ${ROOT}/usr/share/man/man1/${PKG}.1.gz
 
           # Translated man pages (skip <20% translated)
           for langdir in man/*/; do

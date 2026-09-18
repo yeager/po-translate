@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # SPDX-License-Identifier: GPL-3.0-or-later
 # po-translate - Batch translate .po and .ts files
 # Copyright (C) 2026 Daniel Nylander <daniel@danielnylander.se>
@@ -12,21 +11,21 @@ Supports:
 - Lingva (free, no API key)
 - Google Translate (free tier via googletrans)
 """
+from __future__ import annotations
 
 import argparse
 import json
-
 import os
 import re
 import sys
 import time
-import urllib.request
 import urllib.parse
+import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import ClassVar
 
-__version__ = "1.6.0"
+__version__ = "1.6.1"
 
 # Simple passthrough (i18n removed)
 def _(s): return s
@@ -44,6 +43,8 @@ class TranslationEntry:
     flags: list = field(default_factory=list)
     line: int = 0
     _raw_lines: list = field(default_factory=list)  # Preserve original line wrapping
+    raw_block: str = ""
+    skip_reason: str = ""
     
     @property
     def is_plural(self) -> bool:
@@ -55,16 +56,19 @@ class TranslationEntry:
         """Check if entry needs translation."""
         if not self.msgid:  # Header
             return False
+        if self.skip_reason or 'fuzzy' in self.flags:
+            return False
         if self.is_plural:
             # Plural: needs translation if any msgstr[N] is empty
             if not self.msgstr_plural:
                 return True
             return any(not v for v in self.msgstr_plural.values())
-        if self.msgstr:  # Already translated
-            return False
-        if 'fuzzy' in self.flags:  # Fuzzy = needs review, not retranslation
-            return False
-        return True
+        return not self.msgstr
+
+    @property
+    def plural_count(self) -> int:
+        """Number of target plural forms known for this entry."""
+        return max(self.msgstr_plural, default=1) + 1
 
 
 class POFile:
@@ -92,7 +96,7 @@ class POFile:
             if entry:
                 self.entries.append(entry)
     
-    def _parse_block(self, block: str) -> Optional[TranslationEntry]:
+    def _parse_block(self, block: str) -> TranslationEntry | None:
         """Parse a single PO block."""
         lines = block.strip().split('\n')
         
@@ -107,14 +111,14 @@ class POFile:
                 if line.startswith('#,'):
                     # Flags
                     flags = line[2:].strip().split(',')
-                    entry.flags = [f.strip() for f in flags]
+                    entry.flags.extend(f.strip() for f in flags if f.strip() not in entry.flags)
                 else:
                     entry.comments.append(line)
                 continue
             
             # msgctxt, msgid, msgid_plural, msgstr (check longer keys first)
             for key in ['msgctxt', 'msgid_plural', 'msgid', 'msgstr']:
-                if line.startswith(key):
+                if line == key or line.startswith((key + ' ', key + '[')):
                     match = re.match(rf'{key}(\[\d+\])?\s+"(.*)"', line)
                     if match:
                         suffix = match.group(1) or ''
@@ -153,7 +157,15 @@ class POFile:
                         elif current_key == 'msgctxt':
                             entry.msgctxt += value
         
-        return entry if entry.msgid or entry.msgstr else None
+        if entry.msgid or entry.msgstr or entry.msgstr_plural:
+            return entry
+        # Obsolete entries are comments to gettext, but they are still valuable
+        # translation history.  Keep their complete block byte-for-byte instead
+        # of dropping it when another entry causes the file to be saved.
+        if all(line.lstrip().startswith('#~') for line in lines):
+            entry.raw_block = block.strip()
+            return entry
+        return None
     
     def _unescape(self, s: str) -> str:
         """Unescape PO string."""
@@ -167,16 +179,19 @@ class POFile:
         """Get entries that need translation."""
         return [e for e in self.entries if e.needs_translation]
     
-    def save(self, filepath: str = None):
+    def save(self, filepath: str | None = None):
         """Save PO file."""
         filepath = filepath or self.filepath
         
         lines = []
         
         for entry in self.entries:
+            if entry.raw_block:
+                lines.append(entry.raw_block)
+                lines.append('')
+                continue
             # Comments
-            for comment in entry.comments:
-                lines.append(comment)
+            lines.extend(entry.comments)
             
             # Flags
             if entry.flags:
@@ -229,23 +244,32 @@ class TSFile:
             context_name = context.findtext('name', '')
             
             for message in context.findall('message'):
-                source = message.findtext('source', '')
+                source_elem = message.find('source')
+                source = source_elem.text or '' if source_elem is not None else ''
                 translation_elem = message.find('translation')
                 
                 translation = ''
                 flags = []
                 
+                plural = {}
                 if translation_elem is not None:
                     translation = translation_elem.text or ''
                     if translation_elem.get('type') == 'unfinished':
                         flags.append('unfinished')
+                    plural = {i: form.text or '' for i, form in
+                              enumerate(translation_elem.findall('numerusform'))}
                 
                 entry = TranslationEntry(
                     msgid=source,
                     msgstr=translation,
                     msgctxt=context_name,
+                    msgid_plural=source if plural else '',
+                    msgstr_plural=plural,
                     flags=flags
                 )
+                if (source_elem is not None and list(source_elem)) or (
+                        translation_elem is not None and list(translation_elem) and not plural):
+                    entry.skip_reason = 'contains inline XML markup'
                 entry._message_elem = message  # Keep reference for saving
                 self.entries.append(entry)
     
@@ -253,7 +277,7 @@ class TSFile:
         """Get entries that need translation."""
         return [e for e in self.entries if e.needs_translation or 'unfinished' in e.flags]
     
-    def save(self, filepath: str = None):
+    def save(self, filepath: str | None = None):
         """Save TS file."""
         filepath = filepath or self.filepath
         
@@ -261,11 +285,15 @@ class TSFile:
             if hasattr(entry, '_message_elem'):
                 translation_elem = entry._message_elem.find('translation')
                 if translation_elem is not None:
-                    translation_elem.text = entry.msgstr
-                    if entry.msgstr:
-                        # Remove 'unfinished' type when translated
-                        if 'type' in translation_elem.attrib:
-                            del translation_elem.attrib['type']
+                    if entry.is_plural:
+                        forms = translation_elem.findall('numerusform')
+                        for i, form in enumerate(forms):
+                            form.text = entry.msgstr_plural.get(i, '')
+                    else:
+                        translation_elem.text = entry.msgstr
+                    complete = all(entry.msgstr_plural.values()) if entry.is_plural else bool(entry.msgstr)
+                    if complete and 'type' in translation_elem.attrib:
+                        del translation_elem.attrib['type']
         
         self.tree.write(filepath, encoding='utf-8', xml_declaration=True)
 
@@ -274,7 +302,7 @@ class XLIFFFile:
     """Parse and write XLIFF (.xliff/.xlf) files."""
 
     # XLIFF 1.2 namespace
-    NS = {'x': 'urn:oasis:names:tc:xliff:document:1.2'}
+    NS: ClassVar[dict[str, str]] = {'x': 'urn:oasis:names:tc:xliff:document:1.2'}
 
     def __init__(self, filepath: str):
         self.filepath = filepath
@@ -307,12 +335,15 @@ class XLIFFFile:
             )
             entry._tu_elem = tu
             entry._ns = ns
+            if ((source_elem is not None and list(source_elem)) or
+                    (target_elem is not None and list(target_elem))):
+                entry.skip_reason = 'contains inline XML markup'
             self.entries.append(entry)
 
     def get_untranslated(self) -> list[TranslationEntry]:
         return [e for e in self.entries if e.needs_translation]
 
-    def save(self, filepath: str = None):
+    def save(self, filepath: str | None = None):
         filepath = filepath or self.filepath
 
         for entry in self.entries:
@@ -355,6 +386,38 @@ class Translator:
         return results
 
 
+class TranslationError(RuntimeError):
+    """A provider response that must not be written into a catalog."""
+
+
+def parse_numbered_translations(content: str, expected: int) -> list[str]:
+    """Return an exact numbered provider response or fail without changing files."""
+    translations = []
+    for line in content.strip().split('\n'):
+        match = re.match(r'^\s*(\d+)\.\s*(.*)$', line)
+        if match:
+            if int(match.group(1)) != len(translations) + 1:
+                raise TranslationError('provider returned out-of-order translations')
+            translations.append(match.group(2))
+    if len(translations) != expected:
+        raise TranslationError(f'provider returned {len(translations)} translations; expected {expected}')
+    return translations
+
+
+def placeholders(text: str) -> list[str]:
+    """Extract common printf, Qt and brace placeholders without guessing."""
+    pattern = r'%(?:\([^)]+\))?[#0 +\-]*\d*(?:\.\d+)?[a-zA-Z]|%[1-9]\d*|%n|\{[^{}]*\}'
+    return sorted(re.findall(pattern, text))
+
+
+def apply_glossary(text: str, glossary: dict | None) -> str:
+    if not glossary:
+        return text
+    for src_term, tgt_term in glossary.items():
+        text = re.sub(re.escape(src_term), tgt_term, text, flags=re.IGNORECASE)
+    return text
+
+
 class LingvaTranslator(Translator):
     """Free translation via Lingva (Google Translate frontend)."""
     
@@ -374,16 +437,18 @@ class LingvaTranslator(Translator):
         try:
             response = urllib.request.urlopen(req, timeout=30)
             data = json.loads(response.read().decode())
-            return data.get('translation', text)
-        except Exception as e:
-            print(f"  ⚠️ Lingva error: {e}", file=sys.stderr)
-            return text
+            translation = data.get('translation')
+            if not isinstance(translation, str):
+                raise TranslationError('Lingva response has no translation')
+            return translation
+        except (OSError, ValueError, TranslationError) as e:
+            raise TranslationError(f'Lingva error: {e}') from e
 
 
 class OpenAITranslator(Translator):
     """Translation via OpenAI API."""
     
-    def __init__(self, api_key: str, model: str = "gpt-4o-mini", base_url: str = None):
+    def __init__(self, api_key: str, model: str = "gpt-4o-mini", base_url: str | None = None):
         self.api_key = api_key
         self.model = model
         self.base_url = base_url or "https://api.openai.com/v1"
@@ -429,23 +494,10 @@ Return ONLY the translations, one per line, numbered:
             result = json.loads(response.read().decode())
             content = result['choices'][0]['message']['content']
             
-            # Parse numbered responses
-            translations = []
-            for line in content.strip().split('\n'):
-                # Remove numbering (1. 2. etc)
-                match = re.match(r'^\d+\.\s*(.+)$', line.strip())
-                if match:
-                    translations.append(match.group(1))
-            
-            # Pad with originals if we didn't get enough
-            while len(translations) < len(texts):
-                translations.append(texts[len(translations)])
-            
-            return translations[:len(texts)]
+            return parse_numbered_translations(content, len(texts))
             
         except Exception as e:
-            print(f"  ⚠️ OpenAI error: {e}", file=sys.stderr)
-            return texts
+            raise TranslationError(f'OpenAI error: {e}') from e
     
     def translate(self, text: str, source_lang: str, target_lang: str) -> str:
         results = self.translate_batch([text], source_lang, target_lang)
@@ -496,20 +548,10 @@ Return ONLY the translations, one per line, numbered:
             result = json.loads(response.read().decode())
             content = result['content'][0]['text']
             
-            translations = []
-            for line in content.strip().split('\n'):
-                match = re.match(r'^\d+\.\s*(.+)$', line.strip())
-                if match:
-                    translations.append(match.group(1))
-            
-            while len(translations) < len(texts):
-                translations.append(texts[len(translations)])
-            
-            return translations[:len(texts)]
+            return parse_numbered_translations(content, len(texts))
             
         except Exception as e:
-            print(f"  ⚠️ Anthropic error: {e}", file=sys.stderr)
-            return texts
+            raise TranslationError(f'Anthropic error: {e}') from e
     
     def translate(self, text: str, source_lang: str, target_lang: str) -> str:
         results = self.translate_batch([text], source_lang, target_lang)
@@ -519,7 +561,7 @@ Return ONLY the translations, one per line, numbered:
 class MyMemoryTranslator(Translator):
     """Free translation via MyMemory API."""
     
-    def __init__(self, email: str = None):
+    def __init__(self, email: str | None = None):
         self.email = email  # Optional, increases rate limit
     
     def translate(self, text: str, source_lang: str, target_lang: str) -> str:
@@ -542,12 +584,13 @@ class MyMemoryTranslator(Translator):
             data = json.loads(response.read().decode())
             
             if data.get('responseStatus') == 200:
-                return data['responseData']['translatedText']
-            return text
+                translation = data.get('responseData', {}).get('translatedText')
+                if isinstance(translation, str):
+                    return translation
+            raise TranslationError(f'MyMemory response status: {data.get("responseStatus")}')
             
         except Exception as e:
-            print(f"  ⚠️ MyMemory error: {e}", file=sys.stderr)
-            return text
+            raise TranslationError(f'MyMemory error: {e}') from e
 
 
 class DeepLTranslator(Translator):
@@ -599,16 +642,12 @@ class DeepLTranslator(Translator):
             result = json.loads(response.read().decode())
             
             translations = [t['text'] for t in result.get('translations', [])]
-            
-            # Pad with originals if needed
-            while len(translations) < len(texts):
-                translations.append(texts[len(translations)])
-            
-            return translations[:len(texts)]
+            if len(translations) != len(texts):
+                raise TranslationError(f'DeepL returned {len(translations)} translations; expected {len(texts)}')
+            return translations
             
         except Exception as e:
-            print(f"  ⚠️ DeepL error: {e}", file=sys.stderr)
-            return texts
+            raise TranslationError(f'DeepL error: {e}') from e
     
     def translate(self, text: str, source_lang: str, target_lang: str) -> str:
         results = self.translate_batch([text], source_lang, target_lang)
@@ -618,7 +657,7 @@ class DeepLTranslator(Translator):
 class LibreTranslateTranslator(Translator):
     """Translation via LibreTranslate API (self-hosted or public)."""
     
-    def __init__(self, url: str = "https://libretranslate.com", api_key: str = None):
+    def __init__(self, url: str = "https://libretranslate.com", api_key: str | None = None):
         self.base_url = url.rstrip('/')
         self.api_key = api_key
     
@@ -651,11 +690,13 @@ class LibreTranslateTranslator(Translator):
         try:
             response = urllib.request.urlopen(req, timeout=30)
             result = json.loads(response.read().decode())
-            return result.get('translatedText', text)
+            translation = result.get('translatedText')
+            if not isinstance(translation, str):
+                raise TranslationError('LibreTranslate response has no translation')
+            return translation
             
         except Exception as e:
-            print(f"  ⚠️ LibreTranslate error: {e}", file=sys.stderr)
-            return text
+            raise TranslationError(f'LibreTranslate error: {e}') from e
 
 
 class GoogleCloudTranslator(Translator):
@@ -692,15 +733,12 @@ class GoogleCloudTranslator(Translator):
             result = json.loads(response.read().decode())
             
             translations = [t['translatedText'] for t in result['data']['translations']]
-            
-            while len(translations) < len(texts):
-                translations.append(texts[len(translations)])
-            
-            return translations[:len(texts)]
+            if len(translations) != len(texts):
+                raise TranslationError(f'Google returned {len(translations)} translations; expected {len(texts)}')
+            return translations
             
         except Exception as e:
-            print(f"  ⚠️ Google Cloud error: {e}", file=sys.stderr)
-            return texts
+            raise TranslationError(f'Google Cloud error: {e}') from e
     
     def translate(self, text: str, source_lang: str, target_lang: str) -> str:
         results = self.translate_batch([text], source_lang, target_lang)
@@ -751,8 +789,10 @@ def get_translator(service: str, config: dict) -> Translator:
 
 def translate_file(filepath: str, translator: Translator, source_lang: str, target_lang: str, 
                    batch_size: int = 10, dry_run: bool = False, verbose: bool = False,
-                   glossary: dict = None, mark_fuzzy: bool = False) -> dict:
+                   glossary: dict | None = None, mark_fuzzy: bool = False, report: bool = True) -> dict:
     """Translate a single file."""
+    if batch_size < 1:
+        raise ValueError('batch_size must be at least 1')
     ext = Path(filepath).suffix.lower()
     file_start = time.time()
     
@@ -779,7 +819,8 @@ def translate_file(filepath: str, translator: Translator, source_lang: str, targ
     if not untranslated:
         return {'translated': 0, 'total': len(po_file.entries), 'chars_source': 0, 'chars_target': 0}
     
-    print(f"  📝 {len(untranslated)} strings to translate...")
+    if report:
+        print(f"  📝 {len(untranslated)} entries to translate...")
     vprint(_("   Total entries in file: {count}").format(count=len(po_file.entries)))
     
     # Translate in batches
@@ -787,66 +828,89 @@ def translate_file(filepath: str, translator: Translator, source_lang: str, targ
     total_chars_source = 0
     total_chars_target = 0
     total_api_time = 0
-    num_batches = (len(untranslated) + batch_size - 1) // batch_size
 
     # Optional progress bar
     try:
         from tqdm import tqdm
-        _progress = tqdm(total=len(untranslated), desc="  Translating", unit="str", leave=False)
+        _progress = tqdm(total=len(untranslated), desc="  Translating", unit="entry", leave=False) if report else None
     except ImportError:
         _progress = None
     
-    for i in range(0, len(untranslated), batch_size):
-        batch = untranslated[i:i + batch_size]
-        texts = [e.msgid for e in batch]
+    # A plural entry has one source string per target plural form.  Translating
+    # those strings separately prevents the old destructive single-msgstr path.
+    tasks = []
+    for entry in untranslated:
+        if entry.is_plural:
+            for form in range(entry.plural_count):
+                if not entry.msgstr_plural.get(form):
+                    tasks.append((entry, form, entry.msgid if form == 0 else entry.msgid_plural))
+        else:
+            tasks.append((entry, None, entry.msgid))
+    num_batches = (len(tasks) + batch_size - 1) // batch_size
+    translations_by_entry = {}
+    for i in range(0, len(tasks), batch_size):
+        batch = tasks[i:i + batch_size]
+        texts = [task[2] for task in batch]
         batch_chars = sum(len(t) for t in texts)
         total_chars_source += batch_chars
         batch_num = i // batch_size + 1
         
-        print(f"  🔄 Batch {batch_num}/{num_batches}...", end=' ', flush=True)
+        if report:
+            print(f"  🔄 Batch {batch_num}/{num_batches}...", end=' ', flush=True)
         vprint("")
         vprint(_("       Strings: {count}, chars: {chars}").format(count=len(batch), chars=batch_chars))
         
         api_start = time.time()
         translations = translator.translate_batch(texts, source_lang, target_lang)
+        if len(translations) != len(batch):
+            raise TranslationError(f'provider returned {len(translations)} translations; expected {len(batch)}')
         api_elapsed = time.time() - api_start
         total_api_time += api_elapsed
         
         trans_chars = sum(len(t) for t in translations)
         total_chars_target += trans_chars
         
-        for entry, translation in zip(batch, translations):
-            # Apply glossary post-processing
-            if glossary:
-                for src_term, tgt_term in glossary.items():
-                    translation = re.sub(
-                        re.escape(src_term), tgt_term, translation, flags=re.IGNORECASE
-                    )
-            entry.msgstr = translation
-            if mark_fuzzy and 'fuzzy' not in entry.flags:
-                entry.flags.append('fuzzy')
-            translated_count += 1
+        for (entry, form, source), translation in zip(batch, translations):
+            translation = apply_glossary(translation, glossary)
+            if placeholders(source) != placeholders(translation):
+                raise TranslationError(f'placeholder mismatch for {source!r}')
+            translations_by_entry.setdefault(id(entry), {})[form] = translation
         
         chars_per_sec = batch_chars / api_elapsed if api_elapsed > 0 else 0
         if _progress:
-            _progress.update(len(batch))
-        print("✓")
+            _progress.update(len({id(entry) for entry, _, _ in batch}))
+        if report:
+            print("✓")
         vprint(_("       API response: {elapsed:.2f}s ({speed:.0f} chars/s)").format(
             elapsed=api_elapsed, speed=chars_per_sec))
         
         # Rate limiting between batches
-        if i + batch_size < len(untranslated):
+        if i + batch_size < len(tasks):
             time.sleep(0.5)
     
     if _progress:
         _progress.close()
 
+    # All provider responses and placeholders are valid.  Apply atomically only
+    # now, so a later failed batch cannot leave a partially altered catalog.
+    for entry in untranslated:
+        values = translations_by_entry.get(id(entry), {})
+        if entry.is_plural:
+            entry.msgstr_plural.update(values)
+        else:
+            entry.msgstr = values[None]
+        if mark_fuzzy and 'fuzzy' not in entry.flags:
+            entry.flags.append('fuzzy')
+        translated_count += 1
+
     # Save file
     if not dry_run:
         po_file.save()
-        print(f"  💾 Saved: {filepath}")
+        if report:
+            print(f"  💾 Saved: {filepath}")
     else:
-        print(f"  🔍 Dry run: would save {filepath}")
+        if report:
+            print(f"  🔍 Dry run: would save {filepath}")
     
     file_elapsed = time.time() - file_start
     vprint(_("   File completed in {elapsed:.2f}s (API time: {api:.2f}s)").format(
@@ -929,8 +993,8 @@ Services (API key required):
         """)
     )
     
-    parser.add_argument('paths', nargs='+', help=_('Files or directories to translate'))
-    parser.add_argument('--source', '-s', required=True, help=_('Source language code (e.g., en)'))
+    parser.add_argument('paths', nargs='*', help=_('Files or directories to translate'))
+    parser.add_argument('--source', '-s', help=_('Source language code (e.g., en)'))
     parser.add_argument('--target', '-t', help=_('Target language code (e.g., sv, de, fr). Defaults to system LANG.'))
     parser.add_argument('--service', default='lingva', 
                         choices=['lingva', 'mymemory', 'libretranslate', 'deepl', 'deepl-free', 'google', 'openai', 'anthropic'],
@@ -951,7 +1015,7 @@ Services (API key required):
                         help=_('Show version number and exit'))
     parser.add_argument('--about', action='store_true', help=_('Show application info and exit'))
     
-    args, remaining = parser.parse_known_args()
+    args = parser.parse_args()
     
     if args.about:
         print(f"po-translate {__version__}")
@@ -964,7 +1028,10 @@ Services (API key required):
         print("Translate:  https://app.transifex.com/danielnylander/po-translate/")
         sys.exit(0)
     
-    args = parser.parse_args()
+    if not args.paths:
+        parser.error('at least one file or directory is required')
+    if not args.source:
+        parser.error('--source is required')
     
     # Setup verbose printing
     verbose = args.verbose
@@ -987,7 +1054,8 @@ Services (API key required):
         if not args.target or args.target == 'C' or args.target == 'POSIX':
             print(_("❌ Error: --target required (could not detect from LANG environment)"), file=sys.stderr)
             sys.exit(1)
-        print(_("ℹ️  Using target language from LANG: {lang}").format(lang=args.target))
+        print(_("ℹ️  Using target language from LANG: {lang}").format(lang=args.target),
+              file=sys.stderr if args.json else sys.stdout)
     
     # Get translator
     config = {
@@ -1034,10 +1102,12 @@ Services (API key required):
     total_api_time = 0
     start_time = time.time()
     
+    failures = 0
     for file_idx, filepath in enumerate(files, 1):
         vprint(_("📄 [{current}/{total}] Processing: {file}").format(
             current=file_idx, total=len(files), file=filepath))
-        print(f"📄 {filepath}")
+        if not args.quiet and not args.json:
+            print(f"📄 {filepath}")
         
         try:
             result = translate_file(
@@ -1049,11 +1119,13 @@ Services (API key required):
                 dry_run=args.dry_run,
                 verbose=verbose,
                 glossary=_glossary,
-                mark_fuzzy=args.fuzzy
+                mark_fuzzy=args.fuzzy,
+                report=not args.quiet and not args.json
             )
             
             if 'error' in result:
-                print(_("  ❌ {error}").format(error=result['error']))
+                print(_("  ❌ {error}").format(error=result['error']), file=sys.stderr)
+                failures += 1
                 vprint(_("   Error processing file"))
             else:
                 total_translated += result['translated']
@@ -1064,11 +1136,13 @@ Services (API key required):
                 vprint(_("   Translated {count} of {total} entries").format(
                     count=result['translated'], total=result['total']))
                 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - a malformed user catalog must not stop later files
             print(_("  ❌ Error: {error}").format(error=e), file=sys.stderr)
+            failures += 1
             vprint(_("   Exception: {type}").format(type=type(e).__name__))
         
-        print()
+        if not args.quiet and not args.json:
+            print()
     
     total_elapsed = time.time() - start_time
     
@@ -1101,15 +1175,18 @@ Services (API key required):
             "target_lang": args.target,
             "dry_run": args.dry_run,
             "elapsed_seconds": round(total_elapsed, 2),
+            "failures": failures,
         }
         print(_json.dumps(summary, indent=2, ensure_ascii=False))
     elif not args.quiet:
         print("=" * 40)
         print(_("✅ Done! Translated {count} strings").format(count=total_translated))
         print(_("   Total entries: {count}").format(count=total_entries))
-        
         if args.dry_run:
             print(_("   (dry run - no files modified)"))
+
+    if failures:
+        sys.exit(1)
     
     sys.exit(0)
 

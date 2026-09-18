@@ -43,6 +43,7 @@
   <url type="vcs-browser">https://github.com/yeager/po-translate</url>
 
   <releases>
+    <release version="1.6.1" date="2026-09-18" />
     <release version="1.2.0" date="2026-02-03" />
     <release version="1.1.0" />
     <release version="1.0.0" />

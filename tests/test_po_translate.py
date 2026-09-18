@@ -107,6 +107,66 @@ msgstr ""
         assert "Line1\nLine2" == entries[0].msgid
         os.unlink(path)
 
+    def test_plural_translation_preserves_all_forms(self):
+        path = self._write_po('''\
+msgid ""
+msgstr ""
+"Language: sv\\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\\n"
+
+msgid "file"
+msgid_plural "files"
+msgstr[0] ""
+msgstr[1] ""
+''')
+
+        class Dummy(po_translate.Translator):
+            def translate_batch(self, texts, source_lang, target_lang):
+                return ["fil" if text == "file" else "filer" for text in texts]
+
+        result = po_translate.translate_file(path, Dummy(), "en", "sv", report=False)
+        assert result['translated'] == 1
+        entry = po_translate.POFile(path).entries[-1]
+        assert entry.msgstr_plural == {0: "fil", 1: "filer"}
+        assert not entry.needs_translation
+        os.unlink(path)
+
+    def test_save_keeps_obsolete_entries(self):
+        path = self._write_po('''\
+msgid ""
+msgstr ""
+
+#~ msgid "Removed"
+#~ msgstr "Borttagen"
+
+msgid "Open"
+msgstr ""
+''')
+
+        class Dummy(po_translate.Translator):
+            def translate_batch(self, texts, source_lang, target_lang):
+                return ["Öppna"]
+
+        po_translate.translate_file(path, Dummy(), "en", "sv", report=False)
+        content = open(path, encoding='utf-8').read()
+        assert '#~ msgid "Removed"' in content
+        assert '#~ msgstr "Borttagen"' in content
+        os.unlink(path)
+
+    def test_placeholder_mismatch_does_not_modify_file(self):
+        path = self._write_po('msgid ""\nmsgstr ""\n\nmsgid "Open %s"\nmsgstr ""\n')
+
+        class BadTranslator(po_translate.Translator):
+            def translate_batch(self, texts, source_lang, target_lang):
+                return ["Öppna"]
+
+        try:
+            po_translate.translate_file(path, BadTranslator(), "en", "sv", report=False)
+            assert False, "placeholder mismatch must fail"
+        except po_translate.TranslationError:
+            assert 'msgstr ""' in open(path, encoding='utf-8').read()
+        os.unlink(path)
+
 
 # === TS Parsing ===
 
@@ -161,6 +221,22 @@ class TestTSFile:
         untranslated = ts.get_untranslated()
         assert len(untranslated) == 1
         assert untranslated[0].msgid == "Open"
+        os.unlink(path)
+
+    def test_numerus_translation_keeps_numerusform_elements(self):
+        path = self._write_ts('''\
+<TS version="2.1"><context><name>App</name><message numerus="yes">
+<source>%n file(s)</source><translation type="unfinished"><numerusform></numerusform><numerusform></numerusform></translation>
+</message></context></TS>''')
+
+        class Dummy(po_translate.Translator):
+            def translate_batch(self, texts, source_lang, target_lang):
+                return ["%n fil", "%n filer"]
+
+        po_translate.translate_file(path, Dummy(), "en", "sv", report=False)
+        content = open(path, encoding='utf-8').read()
+        assert '<numerusform>%n fil</numerusform>' in content
+        assert '<numerusform>%n filer</numerusform>' in content
         os.unlink(path)
 
 

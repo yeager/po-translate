@@ -1,4 +1,4 @@
-# po-translate [![Version](https://img.shields.io/badge/version-1.5.7-blue.svg)](https://github.com/yeager/po-translate)
+# po-translate [![Version](https://img.shields.io/badge/version-1.6.1-blue.svg)](https://github.com/yeager/po-translate)
 
 ## Description
 
@@ -17,6 +17,8 @@ The tool is designed for developers, translators, and localization teams who nee
 - Dry-run mode for testing
 - Recursive directory processing
 - JSON output for automation
+- Safe plural handling for gettext PO and Qt TS files
+- Placeholder validation; failed provider responses never overwrite a catalog
 
 ## Usage
 
