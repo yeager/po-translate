@@ -2,14 +2,17 @@
 
 ## Description
 
-po-translate is a command-line tool for batch translating .po and .ts localization files using AI or free translation services. It supports multiple translation backends including free services like Lingva and MyMemory, as well as premium AI services like OpenAI GPT, Anthropic Claude, and DeepL.
+po-translate is a command-line tool for batch translating PO, Qt TS and XLIFF
+localization files using AI or translation services. It supports multiple
+backends including free services such as Lingva and MyMemory, as well as OpenAI,
+Anthropic and DeepL.
 
 The tool is designed for developers, translators, and localization teams who need to quickly translate large sets of localization files with consistency and accuracy. It includes features like custom glossaries, fuzzy marking, and dry-run capabilities.
 
 ## Features
 
 - Multiple translation services (free and premium)
-- Support for .po and .ts file formats
+- Support for PO, Qt TS and XLIFF files
 - Batch processing of multiple files
 - Custom glossary support for consistent terminology
 - AI services with context awareness
@@ -17,8 +20,9 @@ The tool is designed for developers, translators, and localization teams who nee
 - Dry-run mode for testing
 - Recursive directory processing
 - JSON output for automation
-- Safe plural handling for gettext PO and Qt TS files
-- Placeholder validation; failed provider responses never overwrite a catalog
+- Safe plural handling: every plural form is translated and preserved
+- Placeholder validation and atomic writes: a failed or incomplete provider
+  response never overwrites a catalog
 
 ## Usage
 
@@ -56,20 +60,32 @@ po-translate --quiet --json --source en --target fr ./translations/
 
 ## Installation
 
-### APT Repository (Debian/Ubuntu)
+### Direct DEB install (Debian/Ubuntu)
 
 ```bash
-echo "deb https://yeager.github.io/debian-repo stable main" | sudo tee /etc/apt/sources.list.d/yeager-l10n.list
-sudo apt update
-sudo apt install po-translate
+curl -LO https://yeager.github.io/debian-repo/pool/main/p/po-translate/po-translate_1.6.1_all.deb
+sudo apt install ./po-translate_1.6.1_all.deb
 ```
+
+The current package is available directly while the signed APT index awaits
+the repository's existing signing key.
 
 ### DNF Repository (Fedora/RHEL)
 
 ```bash
-sudo dnf config-manager --add-repo https://yeager.github.io/rpm-repo/yeager-l10n.repo
+sudo dnf config-manager addrepo --from-repofile=https://yeager.github.io/rpm-repo/yeager.repo
+sudo dnf makecache
 sudo dnf install po-translate
 ```
+
+## Safe catalog updates
+
+Plural translations are applied to their matching plural slots, including when
+`--fuzzy` is used. Before writing, po-translate verifies placeholders and that
+the provider supplied every required form. If a request fails, returns an empty
+translation or changes placeholders, the input file is left unchanged. In
+`--json` mode, results are written to standard output and diagnostics to
+standard error for reliable automation.
 
 ### Building from Source
 
