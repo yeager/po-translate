@@ -44,7 +44,7 @@ See SERVICES section for detailed information about each provider.
 .TP
 .BR \-\-api\-key " " \fIKEY\fR
 API key for commercial and AI-powered services. Required for deepl,
-deepl-free, google, openai, and anthropic services. Can also be provided
+google, openai, and anthropic services. Can also be provided
 via environment variables (see ENVIRONMENT section).
 .TP
 .BR \-\-url " " \fIURL\fR
@@ -130,15 +130,10 @@ users, self-hosted environments.
 .TP
 .B deepl
 Premium neural machine translation service known for high-quality
-results, especially for European languages. Requires API key and paid
-subscription. Offers excellent handling of context and idioms.
+results, especially for European languages. Requires an API key. The key
+selects the DeepL Free or Pro endpoint automatically. Offers excellent
+handling of context and idioms.
 Best for: professional translations, high-quality requirements.
-
-.TP
-.B deepl-free
-Free tier of DeepL service with monthly usage limits. Requires free
-API key registration. Same quality as paid DeepL but with restrictions
-on volume and features. Best for: evaluation, low-volume professional use.
 
 .TP
 .B google
@@ -197,7 +192,7 @@ Quiet processing with JSON output for automation:
 .B po-translate \-s en \-t ru \-\-quiet \-\-json \-\-service mymemory po/
 .TP
 Verbose translation with timing information:
-.B po-translate \-s en \-t zh \-\-verbose \-\-service deepl\-free docs/
+.B po-translate \-s en \-t zh \-\-verbose \-\-service deepl docs/
 .TP
 Non-recursive processing of specific directory:
 .B po-translate \-s en \-t ko \-\-no\-recursive \-\-service google top\-level/
@@ -217,7 +212,7 @@ anthropic and no \-\-api\-key is provided.
 .TP
 .B DEEPL_API_KEY
 API key for DeepL services. Used automatically when \-\-service is
-deepl or deepl\-free and no \-\-api\-key is provided.
+deepl and no \-\-api\-key is provided.
 .TP
 .B GOOGLE_API_KEY
 API key for Google Cloud Translation. Used automatically when

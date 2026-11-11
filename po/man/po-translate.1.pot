@@ -205,20 +205,8 @@ msgstr ""
 #. type: Plain text
 #: data/man/po-translate.1:52
 msgid ""
-"DeepL Pro API. Requires B<--api-key>. High-quality translations for "
-"supported languages."
-msgstr ""
-
-#. type: TP
-#: data/man/po-translate.1:52
-#, no-wrap
-msgid "B<deepl-free>"
-msgstr ""
-
-#. type: Plain text
-#: data/man/po-translate.1:56
-msgid ""
-"DeepL Free API. Requires B<--api-key>. Limited to 500,000 characters/month."
+"DeepL API. Requires B<--api-key>. The API key selects either the Free or Pro "
+"endpoint automatically. High-quality translations for supported languages."
 msgstr ""
 
 #. type: TP

@@ -2,11 +2,72 @@
 import os
 import sys
 import tempfile
+import types
 
 
 # Add parent dir so we can import po_translate
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import po_translate
+
+
+class TestDeepLTranslator:
+    def test_uses_sdk_with_batch_and_language_codes(self):
+        calls = []
+
+        class Result:
+            def __init__(self, text):
+                self.text = text
+
+        class Client:
+            def __init__(self, api_key):
+                calls.append(("client", api_key))
+
+            def translate_text(self, texts, *, source_lang, target_lang):
+                calls.append(("translate", texts, source_lang, target_lang))
+                return [Result("Hej"), Result("Värld")]
+
+        old_module = sys.modules.get("deepl")
+        sys.modules["deepl"] = types.SimpleNamespace(DeepLClient=Client)
+        try:
+            translator = po_translate.DeepLTranslator("test-key")
+            assert translator.translate_batch(["Hello", "World"], "en", "sv") == [
+                "Hej", "Värld"
+            ]
+        finally:
+            if old_module is None:
+                del sys.modules["deepl"]
+            else:
+                sys.modules["deepl"] = old_module
+
+        assert calls == [
+            ("client", "test-key"),
+            ("translate", ["Hello", "World"], "EN", "SV"),
+        ]
+
+    def test_preserves_deepl_language_aliases(self):
+        assert po_translate.DeepLTranslator._map_lang("no") == "NB"
+        assert po_translate.DeepLTranslator._map_lang("pt") == "PT-PT"
+        assert po_translate.DeepLTranslator._map_lang("pt_BR") == "PT-BR"
+
+    def test_deepl_free_remains_a_compatibility_alias(self):
+        class Client:
+            def __init__(self, api_key):
+                self.api_key = api_key
+
+        old_module = sys.modules.get("deepl")
+        sys.modules["deepl"] = types.SimpleNamespace(DeepLClient=Client)
+        try:
+            translator = po_translate.get_translator(
+                "deepl-free", {"api_key": "test-key"}
+            )
+        finally:
+            if old_module is None:
+                del sys.modules["deepl"]
+            else:
+                sys.modules["deepl"] = old_module
+
+        assert isinstance(translator, po_translate.DeepLTranslator)
+        assert translator.client.api_key == "test-key"
 
 
 # === PO Parsing ===

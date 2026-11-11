@@ -596,52 +596,38 @@ class MyMemoryTranslator(Translator):
 class DeepLTranslator(Translator):
     """Translation via DeepL API (free or pro)."""
     
-    def __init__(self, api_key: str, free: bool = False):
-        self.api_key = api_key
-        self.base_url = "https://api-free.deepl.com" if free else "https://api.deepl.com"
-    
-    def _map_lang(self, lang: str) -> str:
-        """Map language codes to DeepL format."""
-        # DeepL uses uppercase and some specific codes
-        lang_map = {
-            'en': 'EN', 'de': 'DE', 'fr': 'FR', 'es': 'ES', 'it': 'IT',
-            'nl': 'NL', 'pl': 'PL', 'pt': 'PT-PT', 'pt-br': 'PT-BR',
-            'ru': 'RU', 'ja': 'JA', 'zh': 'ZH', 'ko': 'KO',
-            'sv': 'SV', 'da': 'DA', 'fi': 'FI', 'nb': 'NB', 'no': 'NB',
-            'el': 'EL', 'cs': 'CS', 'ro': 'RO', 'hu': 'HU', 'sk': 'SK',
-            'sl': 'SL', 'bg': 'BG', 'et': 'ET', 'lv': 'LV', 'lt': 'LT',
-            'uk': 'UK', 'id': 'ID', 'tr': 'TR',
+    def __init__(self, api_key: str):
+        try:
+            import deepl
+        except ImportError as exc:
+            raise ValueError(
+                "DeepL support requires the deepl package. Reinstall po-translate."
+            ) from exc
+        self.client = deepl.DeepLClient(api_key)
+
+    @staticmethod
+    def _map_lang(lang: str) -> str:
+        """Map generic locale codes to DeepL's supported language codes."""
+        normalized = lang.replace('_', '-').lower()
+        aliases = {
+            'no': 'NB',
+            'pt': 'PT-PT',
+            'pt-br': 'PT-BR',
         }
-        return lang_map.get(lang.lower(), lang.upper())
+        return aliases.get(normalized, normalized.upper())
     
     def translate_batch(self, texts: list[str], source_lang: str, target_lang: str) -> list[str]:
         """Translate batch using DeepL API."""
         if not texts:
             return []
         
-        url = f"{self.base_url}/v2/translate"
-        
-        data = urllib.parse.urlencode({
-            'auth_key': self.api_key,
-            'text': texts,  # DeepL supports multiple texts
-            'source_lang': self._map_lang(source_lang),
-            'target_lang': self._map_lang(target_lang),
-        }, doseq=True).encode()
-        
-        req = urllib.request.Request(
-            url,
-            data=data,
-            headers={
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'User-Agent': 'po-translate/1.0'
-            }
-        )
-        
         try:
-            response = urllib.request.urlopen(req, timeout=60)
-            result = json.loads(response.read().decode())
-            
-            translations = [t['text'] for t in result.get('translations', [])]
+            result = self.client.translate_text(
+                texts,
+                source_lang=self._map_lang(source_lang),
+                target_lang=self._map_lang(target_lang)
+            )
+            translations = [t.text for t in result]
             if len(translations) != len(texts):
                 raise TranslationError(f'DeepL returned {len(translations)} translations; expected {len(texts)}')
             return translations
@@ -766,14 +752,10 @@ def get_translator(service: str, config: dict) -> Translator:
         )
     elif service == 'mymemory':
         return MyMemoryTranslator(config.get('email'))
-    elif service == 'deepl':
+    elif service in ('deepl', 'deepl-free'):
         if not config.get('api_key'):
             raise ValueError("DeepL requires --api-key")
-        return DeepLTranslator(config['api_key'], free=False)
-    elif service == 'deepl-free':
-        if not config.get('api_key'):
-            raise ValueError("DeepL Free requires --api-key")
-        return DeepLTranslator(config['api_key'], free=True)
+        return DeepLTranslator(config['api_key'])
     elif service == 'libretranslate':
         return LibreTranslateTranslator(
             config.get('url', 'https://libretranslate.com'),
@@ -985,8 +967,7 @@ Services (free):
   libretranslate  Self-hosted or public instances
 
 Services (API key required):
-  deepl         DeepL Pro (best for European languages)
-  deepl-free    DeepL Free API
+  deepl         DeepL API (Free or Pro, best for European languages)
   google        Google Cloud Translation
   openai        GPT models (context-aware)
   anthropic     Claude models (context-aware)

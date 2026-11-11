@@ -7,6 +7,7 @@ URL:            https://github.com/yeager/po-translate
 Source0:        %{name}-%{version}.tar.gz
 BuildArch:      noarch
 Requires:       python3 >= 3.10
+Requires:       python3dist(deepl)
 
 %description
 A CLI tool for batch translating PO and TS files using
@@ -25,12 +26,6 @@ install -m 644 man/po-translate.1.gz %{buildroot}/usr/share/man/man1/
 mkdir -p %{buildroot}/usr/share/doc/%{name}
 install -m 644 README.md CHANGELOG.md %{buildroot}/usr/share/doc/%{name}/
 
-%post
-# Nothing needed for CLI-only tool
-
-%postun
-# Nothing needed for CLI-only tool
-
 %files
 /usr/bin/po-translate
 /usr/share/man/man1/po-translate.1.gz
@@ -39,6 +34,9 @@ install -m 644 README.md CHANGELOG.md %{buildroot}/usr/share/doc/%{name}/
 %license LICENSE
 
 %changelog
+* Tue Nov 10 2026 Göran Uddeborg <goeran@uddeborg.se>
+- Updated DeepL support, using provided library
+
 * Mon Feb 09 2026 Daniel Nylander <daniel@danielnylander.se> - 1.4.0-1
 - Updated translation engine support
 - Bug fixes and improvements

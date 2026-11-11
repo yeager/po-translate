@@ -12,6 +12,9 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.10"
+dependencies = [
+    "deepl>=1.33,<2",
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Software Development :: Localization",
