@@ -1,4 +1,4 @@
-# po-translate [![Version](https://img.shields.io/badge/version-1.6.1-blue.svg)](https://github.com/yeager/po-translate)
+# po-translate [![Version](https://img.shields.io/badge/version-1.6.2-blue.svg)](https://github.com/yeager/po-translate)
 
 ## Description
 

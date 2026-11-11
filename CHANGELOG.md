@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.2] - 2026-11-11
+
+### Changed
+- Use the maintained DeepL Python SDK for DeepL translations.
+
+### Fixed
+- Keep `deepl-free` as a compatible service alias.
+- Declare the DeepL SDK in Python, Debian and RPM packaging metadata.
+
 ## [1.6.1] - 2026-09-18
 
 ### Fixed

@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import ClassVar
 
-__version__ = "1.6.1"
+__version__ = "1.6.2"
 
 # Simple passthrough (i18n removed)
 def _(s): return s
