@@ -1,4 +1,4 @@
-name: Build .deb
+name: Build release packages
 
 on:
   release:
@@ -9,10 +9,15 @@ permissions:
   contents: write
 
 jobs:
-  build-deb:
+  build-packages:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install RPM build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm
 
       - name: Get version
         id: version
@@ -87,10 +92,13 @@ jobs:
           dpkg-deb --build --root-owner-group ${ROOT}
           mv pkg-deb/*.deb .
 
-      - name: Upload .deb to release
+      - name: Build RPM
+        run: ./scripts/build-rpm.sh
+
+      - name: Upload release packages
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VER=${{ steps.version.outputs.version }}
-          gh release upload "v${VER}" po-translate_${VER}-1_all.deb --clobber 2>/dev/null || \
-          gh release upload "${GITHUB_REF_NAME}" po-translate_${VER}-1_all.deb --clobber
+          gh release upload "v${VER}" po-translate_${VER}-1_all.deb dist/po-translate-${VER}-1.noarch.rpm --clobber 2>/dev/null || \
+          gh release upload "${GITHUB_REF_NAME}" po-translate_${VER}-1_all.deb dist/po-translate-${VER}-1.noarch.rpm --clobber
