@@ -67,8 +67,7 @@ curl -LO https://yeager.github.io/debian-repo/pool/main/p/po-translate/po-transl
 sudo apt install ./po-translate_1.6.3-1_all.deb
 ```
 
-The current package is available directly while the signed APT index awaits
-the repository's existing signing key.
+The current package is also included in the repository's signed APT index.
 
 ### DNF Repository (Fedora/RHEL)
 
