@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.6.3] - 2026-11-21
+
+### Fixed
+- Avoid treating roff/man-page brace alternatives as interpolation placeholders.
+
 ## [1.6.2] - 2026-11-11
 
 ### Changed

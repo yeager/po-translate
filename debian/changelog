@@ -1,3 +1,9 @@
+po-translate (1.6.3-1) stable; urgency=medium
+
+  * Avoid false placeholder mismatches for roff man-page syntax.
+
+ -- Daniel Nylander <daniel@danielnylander.se>  Sat, 21 Nov 2026 18:08:00 +0100
+
 po-translate (1.6.1) stable; urgency=medium
 
   * Fix plural translation and protect catalogs from failed API responses.

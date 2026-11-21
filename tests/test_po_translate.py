@@ -95,6 +95,18 @@ msgstr "Mundo"
         assert len(po.entries) == 3  # header + 2
         os.unlink(path)
 
+    def test_manpage_brace_alternatives_are_not_placeholders(self):
+        text = (
+            r"B<rpm -q >{B<--provides>|B<--requires>} "
+            r"I<PACKAGE_NAME> B<| grep \\&'\\&^\\e(user)\\&>"
+        )
+        assert po_translate.placeholders(text) == []
+
+    def test_named_and_numeric_brace_placeholders_are_preserved(self):
+        assert po_translate.placeholders("{user.name} {0} %s %n") == [
+            "%n", "%s", "{0}", "{user.name}"
+        ]
+
     def test_untranslated(self):
         path = self._write_po('''\
 msgid ""

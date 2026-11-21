@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import ClassVar
 
-__version__ = "1.6.2"
+__version__ = "1.6.3"
 
 # Simple passthrough (i18n removed)
 def _(s): return s
@@ -405,8 +405,14 @@ def parse_numbered_translations(content: str, expected: int) -> list[str]:
 
 
 def placeholders(text: str) -> list[str]:
-    """Extract common printf, Qt and brace placeholders without guessing."""
-    pattern = r'%(?:\([^)]+\))?[#0 +\-]*\d*(?:\.\d+)?[a-zA-Z]|%[1-9]\d*|%n|\{[^{}]*\}'
+    """Extract common printf, Qt and named/numeric brace placeholders."""
+    # Restrict brace placeholders to identifier-like names and numbers. A
+    # catch-all ``{...}`` also captures roff/man-page constructs such as
+    # ``{B<--provides>|B<--requires>}``, which are not interpolation tokens.
+    pattern = (
+        r'%(?:\([^)]+\))?[#0 +\-]*\d*(?:\.\d+)?[a-zA-Z]'
+        r'|%[1-9]\d*|%n|\{(?:[A-Za-z_][\w.-]*|\d+)\}'
+    )
     return sorted(re.findall(pattern, text))
 
 

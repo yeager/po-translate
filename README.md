@@ -1,4 +1,4 @@
-# po-translate [![Version](https://img.shields.io/badge/version-1.6.2-blue.svg)](https://github.com/yeager/po-translate)
+# po-translate [![Version](https://img.shields.io/badge/version-1.6.3-blue.svg)](https://github.com/yeager/po-translate)
 
 ## Description
 
@@ -63,8 +63,8 @@ po-translate --quiet --json --source en --target fr ./translations/
 ### Direct DEB install (Debian/Ubuntu)
 
 ```bash
-curl -LO https://yeager.github.io/debian-repo/pool/main/p/po-translate/po-translate_1.6.2-1_all.deb
-sudo apt install ./po-translate_1.6.2-1_all.deb
+curl -LO https://yeager.github.io/debian-repo/pool/main/p/po-translate/po-translate_1.6.3-1_all.deb
+sudo apt install ./po-translate_1.6.3-1_all.deb
 ```
 
 The current package is available directly while the signed APT index awaits

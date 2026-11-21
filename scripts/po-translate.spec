@@ -1,5 +1,5 @@
 Name:           po-translate
-Version:        1.6.1
+Version:        1.6.3
 Release:        1%{?dist}
 Summary:        Batch translate PO and TS localization files
 License:        GPL-3.0-or-later
@@ -34,6 +34,9 @@ install -m 644 README.md CHANGELOG.md %{buildroot}/usr/share/doc/%{name}/
 %license LICENSE
 
 %changelog
+* Sat Nov 21 2026 Daniel Nylander <daniel@danielnylander.se> - 1.6.3-1
+- Avoid false placeholder mismatches for roff man-page syntax
+
 * Tue Nov 10 2026 Göran Uddeborg <goeran@uddeborg.se>
 - Updated DeepL support, using provided library
 
